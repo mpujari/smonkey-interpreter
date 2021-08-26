@@ -1,0 +1,15 @@
+/.idea/
+/.idea_modules/
+/project/project/
+/project/target/
+/config/target/
+/service/target/
+/target/
+*.class
+.project
+.classpath
+*.iml
+.settings/
+native/
+org/
+tests-and-tools/
