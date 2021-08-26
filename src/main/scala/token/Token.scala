@@ -3,4 +3,10 @@
 
 package token
 
-case class Token(`type`: String, literal: String)
+case class Token(`type`: String, literal: String) {
+
+  override def toString: String = {
+    s"{Type:${`type`} Literal:$literal}"
+  }
+
+}
