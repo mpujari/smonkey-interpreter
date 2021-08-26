@@ -28,14 +28,35 @@ trait Lexer {
     skipWhiteSpace()
     val chStr = ch.toString
     val tok = ch match {
-      case '=' => Token(ASSIGN, chStr)
+      case '=' =>
+        if (peekChar() == '=') {
+          val c = ch
+          readChar()
+          Token(EQ, c.toString + ch.toString)
+        } else {
+          Token(ASSIGN, chStr)
+        }
       case ';' => Token(SEMICOLON, chStr)
       case '(' => Token(LPAREN, chStr)
       case ')' => Token(RPAREN, chStr)
       case ',' => Token(COMMA, chStr)
-      case '+' => Token(PLUS, chStr)
       case '{' => Token(LBRACE, chStr)
       case '}' => Token(RBRACE, chStr)
+      case '+' => Token(PLUS, chStr)
+      case '-' => Token(MINUS, chStr)
+      case '/' => Token(SLASH, chStr)
+      case '%' => Token(MOD, chStr)
+      case '!' =>
+        if (peekChar() == '=') {
+          val c = ch
+          readChar()
+          Token(NOT_EQ, c.toString + ch.toString)
+        } else {
+          Token(BANG, chStr)
+        }
+      case '*' => Token(ASTERISK, chStr)
+      case '<' => Token(LT, chStr)
+      case '>' => Token(GT, chStr)
       case NIL => Token(EOF, "")
       case _ =>
         if (isLetter(ch)) {
@@ -72,6 +93,13 @@ trait Lexer {
     }
     input.substring(pos, position)
   }
+
+  def peekChar(): Char =
+    if (readPosition >= input.length) {
+      NIL
+    } else {
+      input.charAt(readPosition)
+    }
 
   def skipWhiteSpace(): Unit =
     while (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {

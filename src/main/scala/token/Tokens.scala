@@ -14,9 +14,16 @@ object Tokens {
   // operators
   val ASSIGN = "="
   val PLUS = "+"
-  val SUB = "-"
-  val DIV = "/"
+  val MINUS = "-"
+  val BANG = "!"
+  val ASTERISK = "*"
+  val SLASH = "/"
   val MOD = "%"
+
+  val EQ = "=="
+  val NOT_EQ = "!="
+  val LT = "<"
+  val GT = ">"
 
   // delimiters
   val COMMA = ","
@@ -30,10 +37,20 @@ object Tokens {
   // Keywords
   val FUNCTION = "FUNCTION"
   val LET = "LET"
+  val IF = "if"
+  val ELSE = "else"
+  val TRUE = "true"
+  val FALSE = "false"
+  val RETURN = "return"
 
   val keywords: Map[String, String] = Map(
     "fn" -> FUNCTION,
-    "let" -> LET
+    "let" -> LET,
+    "if" -> IF,
+    "else" -> ELSE,
+    "true" -> TRUE,
+    "false" -> FALSE,
+    "return" -> RETURN
   ).withDefaultValue(IDENT)
 
 }
