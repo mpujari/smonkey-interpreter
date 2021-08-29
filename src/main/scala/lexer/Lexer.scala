@@ -79,19 +79,21 @@ trait Lexer {
   def isDigit(ch: Char): Boolean = ch >= '0' && ch <= '9'
 
   def readIdentifier(): String = {
-    val pos = position
+    var chStr = ""
     while (isLetter(ch)) {
+      chStr = chStr + ch
       readChar()
     }
-    input.substring(pos, position)
+    chStr
   }
 
   def readNumber(): String = {
-    val pos = position
+    var chStr = ""
     while (isDigit(ch)) {
+      chStr = chStr + ch
       readChar()
     }
-    input.substring(pos, position)
+    chStr
   }
 
   def peekChar(): Char =

@@ -1,9 +1,10 @@
+// (c) 2021 Mahesh Pujari
+// This code is licensed under MIT license (see LICENSE for details)
+
 import lexer.Lexer
 import token.{Token, Tokens}
 
 import java.util.Scanner
-// (c) 2021 Mahesh Pujari
-// This code is licensed under MIT license (see LICENSE for details)
 
 object Main {
 
