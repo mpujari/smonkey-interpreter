@@ -1,3 +1,6 @@
+// (c) 2021 Mahesh Pujari
+// This code is licensed under MIT license (see LICENSE for details)
+
 package lexer
 
 import org.scalatest.FlatSpec
@@ -8,9 +11,13 @@ class LexerSpec extends FlatSpec {
   "simple test with just idents" should "return expected tokens" in {
     Map(
       "abcd" -> List((IDENT, "abcd")),
+      "abcd;" -> List((IDENT, "abcd"), (SEMICOLON, ";")),
+      "" -> List(),
+      ";" -> List((SEMICOLON, ";")),
       "ab cd" -> List((IDENT, "ab"), (IDENT, "cd")),
       "ab; cd" -> List((IDENT, "ab"), (SEMICOLON, ";"), (IDENT, "cd")),
-      "abcd;" -> List((IDENT, "abcd"), (SEMICOLON, ";"))
+      "+" -> List((PLUS, "+")),
+      ";+" -> List((SEMICOLON, ";"), (PLUS, "+"))
     ) foreach { t =>
       val input = t._1
       val expectedTokens = t._2
@@ -24,17 +31,30 @@ class LexerSpec extends FlatSpec {
   }
 
   "simple op with no semicolon" should "return expected tokens" in {
-    val input = "5 + 10"
-    val expectedTokens = List(
-      (INT, "5"),
-      (PLUS, "+"),
-      (INT, "10")
-    )
-    val lexer = Lexer(input)
-    expectedTokens foreach { et =>
-      val tok = lexer.nextToken()
-      assert(tok.`type` == et._1)
-      assert(tok.literal == et._2)
+    Map(
+      "5 + 100" -> List(
+        (INT, "5"),
+        (PLUS, "+"),
+        (INT, "100")
+      ),
+      "1 + 1" -> List(
+        (INT, "1"),
+        (PLUS, "+"),
+        (INT, "1")
+      ),
+      "1 + " -> List(
+        (INT, "1"),
+        (PLUS, "+")
+      )
+    ) foreach { t =>
+      val input = t._1
+      val expectedTokens = t._2
+      val lexer = Lexer(input)
+      expectedTokens foreach { et =>
+        val tok = lexer.nextToken()
+        assert(tok.`type` == et._1)
+        assert(tok.literal == et._2)
+      }
     }
   }
 
