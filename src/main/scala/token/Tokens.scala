@@ -4,6 +4,9 @@
 package token
 
 object Tokens {
+
+  type TokenType = String
+
   val ILLEGAL = "ILLEGAL"
   val EOF = "EOF"
 
