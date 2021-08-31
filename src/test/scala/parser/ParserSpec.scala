@@ -3,9 +3,10 @@
 
 package parser
 
-import ast.{LetStatement, Statement}
+import ast.{LetStatement, ReturnStatement, Statement}
 import lexer.Lexer
 import org.scalatest.FlatSpec
+import token.Tokens
 
 class ParserSpec extends FlatSpec {
 
@@ -87,10 +88,28 @@ class ParserSpec extends FlatSpec {
         """.stripMargin
     val lexer: Lexer = Lexer(input)
     val parser: Parser = Parser(lexer)
-
     val program = parser.parserProgram()
-    assert(program.statements.isEmpty)
     assert(parser.getErrors.isEmpty)
+    assert(program.statements.isEmpty)
+  }
+
+  "return statement" should "parse program" in {
+    val input =
+      """
+         return 5;
+         return 10;
+         return 993322;
+        """.stripMargin
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 4)
+
+    program.statements.foreach { stmt =>
+      assert(stmt.isInstanceOf[ReturnStatement])
+      assert(stmt.asInstanceOf[ReturnStatement].tokenLiteral() == Tokens.RETURN)
+    }
   }
 
 }

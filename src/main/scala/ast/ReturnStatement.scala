@@ -5,9 +5,9 @@ package ast
 
 import token.{Token, Tokens}
 
-// Let statement is of the form let <identifier> = <expression>;
-case class LetStatement(token: Token, name: Identifier, value: Expression) extends Statement {
-  require(token.`type` == Tokens.LET)
+// return statement is of the form return <expression>;
+case class ReturnStatement(token: Token, value: Expression) extends Statement {
+  require(token.`type` == Tokens.RETURN)
 
   override def statementNode(): Unit = {}
 

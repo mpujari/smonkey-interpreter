@@ -3,7 +3,7 @@
 
 package parser
 
-import ast.{Identifier, LetStatement, Program, Statement}
+import ast.{Identifier, LetStatement, Program, ReturnStatement, Statement}
 import lexer.Lexer
 import token.Token
 import token.Tokens._
@@ -39,8 +39,19 @@ trait Parser {
   }
 
   private def prepareStatement(): Option[Statement] = curToken.`type` match {
-    case LET => parseLetStatement()
-    case _   => Option.empty
+    case LET    => parseLetStatement()
+    case RETURN => parseReturnStatement()
+    case _      => Option.empty
+  }
+
+  private def parseReturnStatement(): Option[Statement] = {
+    val token = curToken
+    nextToken()
+    // TODO pending with expression parsing
+    while (!curTokenIs(SEMICOLON) && !curTokenIs(EOF)) {
+      nextToken()
+    }
+    Some(ReturnStatement(token = token, value = None.orNull))
   }
 
   private def parseLetStatement(): Option[Statement] = {
