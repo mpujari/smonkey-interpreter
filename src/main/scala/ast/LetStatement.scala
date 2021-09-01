@@ -13,4 +13,6 @@ case class LetStatement(token: Token, name: Identifier, value: Expression) exten
 
   override def tokenLiteral(): String = token.literal
 
+  override def toString: String = s"${token.literal} $name = ${if (value != null) { value.toString }};"
+
 }

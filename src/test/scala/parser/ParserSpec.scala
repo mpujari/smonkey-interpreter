@@ -104,7 +104,7 @@ class ParserSpec extends FlatSpec {
     val parser: Parser = Parser(lexer)
     val program = parser.parserProgram()
     assert(parser.getErrors.isEmpty)
-    assert(program.statements.size == 4)
+    assert(program.statements.size == 3)
 
     program.statements.foreach { stmt =>
       assert(stmt.isInstanceOf[ReturnStatement])

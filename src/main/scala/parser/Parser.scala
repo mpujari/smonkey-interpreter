@@ -51,7 +51,7 @@ trait Parser {
     while (!curTokenIs(SEMICOLON) && !curTokenIs(EOF)) {
       nextToken()
     }
-    Some(ReturnStatement(token = token, value = None.orNull))
+    Some(ReturnStatement(token = token, returnValue = None.orNull))
   }
 
   private def parseLetStatement(): Option[Statement] = {

@@ -3,4 +3,8 @@
 
 package ast
 
-case class Program(statements: List[Statement] = List.empty)
+case class Program(statements: List[Statement] = List.empty) {
+
+  override def toString: String = statements.map(_.toString).mkString("")
+
+}
