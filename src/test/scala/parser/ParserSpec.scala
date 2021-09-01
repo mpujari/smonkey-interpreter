@@ -3,7 +3,7 @@
 
 package parser
 
-import ast.{ExpressionStatement, Identifier, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
+import ast.{ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
 import lexer.Lexer
 import org.scalatest.FlatSpec
 import token.Tokens
@@ -162,6 +162,62 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       val prefixExpression: PrefixExpression = expressionStmt.expression.asInstanceOf[PrefixExpression]
       assert(prefixExpression.operator == t._2)
       testIntegerLiteral(prefixExpression.right, t._3)
+    }
+  }
+
+  "simple infex expression" should "pass the test" in {
+    List(
+      ("5 + 5;", 5, "+", 5),
+      ("5 - 5;", 5, "-", 5),
+      ("5 * 5;", 5, "*", 5),
+      ("5 / 5;", 5, "/", 5),
+      ("5 > 5;", 5, ">", 5),
+      ("5 < 5;", 5, "<", 5),
+      ("5 == 5;", 5, "==", 5),
+      ("5 != 5;", 5, "!=", 5)
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[InfixExpression])
+      val infixExpression: InfixExpression = expressionStmt.expression.asInstanceOf[InfixExpression]
+
+      assert(infixExpression.operator == t._3)
+      testIntegerLiteral(infixExpression.left, t._2)
+      testIntegerLiteral(infixExpression.right, t._4)
+    }
+  }
+
+  "operator precedence" should "pass the test" in {
+    List(
+      ("-a * b", "((-a) * b)"),
+      ("!-a", "(!(-a))"),
+      ("a + b +c", "((a + b) + c)"),
+      ("a + b - c", "((a + b) - c)"),
+      ("a * b * c", "((a * b) * c)"),
+      ("a * b / c", "((a * b) / c)"),
+      ("a + b / c", "(a + (b / c))"),
+      ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
+      ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+      ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+      ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
+      ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+      ("-1 + 2", "((-1) + 2)")
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+      val a = program.toString
+      assert(t._2 == a)
     }
   }
 

@@ -3,11 +3,11 @@
 
 package parser
 
-import ast.{Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
+import ast._
 import lexer.Lexer
+import token.Precedences._
 import token.Token
 import token.Tokens._
-import token.Precedences._
 
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
@@ -16,11 +16,21 @@ trait Parser {
 
   val lexer: Lexer
 
-  private var errors: ListBuffer[String] = ListBuffer()
+  private val errors: ListBuffer[String] = ListBuffer()
 
   private var curToken: Token = None.orNull
   private var peekToken: Token = None.orNull
 
+  private val precedences: Map[TokenType, Int] = Map(
+    EQ -> EQUALS.id,
+    NOT_EQ -> EQUALS.id,
+    LT -> LESS_GREATER.id,
+    GT -> LESS_GREATER.id,
+    PLUS -> SUM.id,
+    MINUS -> SUM.id,
+    SLASH -> PRODUCT.id,
+    ASTERISK -> PRODUCT.id
+  )
   private val prefixParseFns: Map[TokenType, () => Option[Expression]] = Map(
     IDENT -> parseIdentifier,
     INT -> parseIntegerLiteral,
@@ -28,7 +38,23 @@ trait Parser {
     MINUS -> parsePrefixExpression
   )
 
-  private val infixParseFns: Map[TokenType, (Expression) => Expression] = Map()
+  private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
+    PLUS -> parseInfixExpression,
+    MINUS -> parseInfixExpression,
+    SLASH -> parseInfixExpression,
+    ASTERISK -> parseInfixExpression,
+    EQ -> parseInfixExpression,
+    NOT_EQ -> parseInfixExpression,
+    LT -> parseInfixExpression,
+    GT -> parseInfixExpression
+  )
+
+  private def parseInfixExpression: Expression => Option[Expression] = { (left: Expression) =>
+    val token = curToken
+    val cu = curPrecedences()
+    nextToken()
+    Some(InfixExpression(token = token, operator = token.literal, left = left, right = parseExpression(cu).orNull)) // TODO orNull revisit
+  }
 
   private def parseIdentifier: () => Option[Identifier] = { () =>
     Some(Identifier(curToken, value = curToken.literal))
@@ -49,6 +75,10 @@ trait Parser {
     nextToken()
     Some(PrefixExpression(token = token, operator = token.literal, right = parseExpression(PREFIX.id).orNull)) // TODO orNull check
   }
+
+  private def peekPrecedences(): Int = precedences.getOrElse(peekToken.`type`, LOWEST.id)
+
+  private def curPrecedences(): Int = precedences.getOrElse(curToken.`type`, LOWEST.id)
 
   def getErrors: List[String] = errors.toList
 
@@ -86,7 +116,17 @@ trait Parser {
 
   private def parseExpression(precedence: Int): Option[Expression] =
     prefixParseFns.get(curToken.`type`) match {
-      case Some(fn) => fn()
+      case Some(prefixFn) =>
+        var leftExp = prefixFn()
+        while (!peekTokenIs(SEMICOLON) && precedence < peekPrecedences()) {
+          val infixOpt = infixParseFns.get(peekToken.`type`)
+          if (infixOpt.isEmpty) {
+            return leftExp
+          }
+          nextToken()
+          leftExp = infixOpt.get(leftExp.get)
+        }
+        leftExp
       case None =>
         noPrefixParseFnError(curToken.`type`)
         Option.empty[Expression]
