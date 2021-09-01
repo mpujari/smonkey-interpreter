@@ -3,12 +3,12 @@
 
 package parser
 
-import ast.{ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Program, ReturnStatement, Statement}
+import ast.{ExpressionStatement, Identifier, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
 import lexer.Lexer
 import org.scalatest.FlatSpec
 import token.Tokens
 
-class ParserSpec extends FlatSpec {
+class ParserSpec extends FlatSpec with AbstractBaseSpec {
 
   "test Let statement" should "parse program" in {
     val input: String =
@@ -144,6 +144,25 @@ class ParserSpec extends FlatSpec {
     val integerLiteral: IntegerLiteral = expressionStmt.expression.asInstanceOf[IntegerLiteral]
     assert(integerLiteral.value == 5)
     assert(integerLiteral.tokenLiteral() == "5")
+  }
+
+  "simple prefix expression" should "pass the test" in {
+    List(("!5;", "!", 5), ("-15;", "-", 15)) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[PrefixExpression])
+      val prefixExpression: PrefixExpression = expressionStmt.expression.asInstanceOf[PrefixExpression]
+      assert(prefixExpression.operator == t._2)
+      testIntegerLiteral(prefixExpression.right, t._3)
+    }
   }
 
 }

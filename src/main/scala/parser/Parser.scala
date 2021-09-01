@@ -3,7 +3,7 @@
 
 package parser
 
-import ast.{Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Program, ReturnStatement, Statement}
+import ast.{Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
 import lexer.Lexer
 import token.Token
 import token.Tokens._
@@ -23,7 +23,9 @@ trait Parser {
 
   private val prefixParseFns: Map[TokenType, () => Option[Expression]] = Map(
     IDENT -> parseIdentifier,
-    INT -> parseIntegerLiteral
+    INT -> parseIntegerLiteral,
+    BANG -> parsePrefixExpression,
+    MINUS -> parsePrefixExpression
   )
 
   private val infixParseFns: Map[TokenType, (Expression) => Expression] = Map()
@@ -35,11 +37,17 @@ trait Parser {
   private def parseIntegerLiteral: () => Option[Expression] = { () =>
     val token = curToken
     Try(token.literal.toInt) match {
-      case Failure(e) =>
+      case Failure(_) =>
         errors += s"could not parse ${curToken.literal} as integer"
         Option.empty[Expression]
       case Success(i) => Some(IntegerLiteral(token = token, value = i))
     }
+  }
+
+  private def parsePrefixExpression: () => Option[Expression] = { () =>
+    val token = curToken
+    nextToken()
+    Some(PrefixExpression(token = token, operator = token.literal, right = parseExpression(PREFIX.id).orNull)) // TODO orNull check
   }
 
   def getErrors: List[String] = errors.toList
@@ -77,7 +85,15 @@ trait Parser {
   }
 
   private def parseExpression(precedence: Int): Option[Expression] =
-    prefixParseFns.get(curToken.`type`).flatMap(f => f())
+    prefixParseFns.get(curToken.`type`) match {
+      case Some(fn) => fn()
+      case None =>
+        noPrefixParseFnError(curToken.`type`)
+        Option.empty[Expression]
+    }
+
+  private def noPrefixParseFnError(tokenType: TokenType): Unit =
+    errors += s"no prefix parse function for $tokenType found"
 
   private def parseReturnStatement(): Option[Statement] = {
     val token = curToken
