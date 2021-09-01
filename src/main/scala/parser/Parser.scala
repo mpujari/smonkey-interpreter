@@ -3,12 +3,14 @@
 
 package parser
 
-import ast.{Identifier, LetStatement, Program, ReturnStatement, Statement}
+import ast.{Expression, ExpressionStatement, Identifier, IntegerLiteral, LetStatement, Program, ReturnStatement, Statement}
 import lexer.Lexer
 import token.Token
 import token.Tokens._
+import token.Precedences._
 
 import scala.collection.mutable.ListBuffer
+import scala.util.{Failure, Success, Try}
 
 trait Parser {
 
@@ -18,6 +20,27 @@ trait Parser {
 
   private var curToken: Token = None.orNull
   private var peekToken: Token = None.orNull
+
+  private val prefixParseFns: Map[TokenType, () => Option[Expression]] = Map(
+    IDENT -> parseIdentifier,
+    INT -> parseIntegerLiteral
+  )
+
+  private val infixParseFns: Map[TokenType, (Expression) => Expression] = Map()
+
+  private def parseIdentifier: () => Option[Identifier] = { () =>
+    Some(Identifier(curToken, value = curToken.literal))
+  }
+
+  private def parseIntegerLiteral: () => Option[Expression] = { () =>
+    val token = curToken
+    Try(token.literal.toInt) match {
+      case Failure(e) =>
+        errors += s"could not parse ${curToken.literal} as integer"
+        Option.empty[Expression]
+      case Success(i) => Some(IntegerLiteral(token = token, value = i))
+    }
+  }
 
   def getErrors: List[String] = errors.toList
 
@@ -41,8 +64,20 @@ trait Parser {
   private def prepareStatement(): Option[Statement] = curToken.`type` match {
     case LET    => parseLetStatement()
     case RETURN => parseReturnStatement()
-    case _      => Option.empty
+    case _      => parseExpressionStatement()
   }
+
+  private def parseExpressionStatement(): Option[ExpressionStatement] = {
+    val token = curToken
+    val expression = parseExpression(LOWEST.id)
+    if (peekTokenIs(SEMICOLON)) {
+      nextToken()
+    }
+    Some(ExpressionStatement(token = token, expression = expression.orNull)) // TODO revisit orNull
+  }
+
+  private def parseExpression(precedence: Int): Option[Expression] =
+    prefixParseFns.get(curToken.`type`).flatMap(f => f())
 
   private def parseReturnStatement(): Option[Statement] = {
     val token = curToken
