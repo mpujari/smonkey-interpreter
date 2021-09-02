@@ -3,7 +3,7 @@
 
 package parser
 
-import ast.{BooleanLiteral, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
+import ast._
 import lexer.Lexer
 import org.scalatest.FlatSpec
 import token.Tokens
@@ -244,6 +244,71 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       val booleanLiteral: BooleanLiteral = expressionStmt.expression.asInstanceOf[BooleanLiteral]
       assert(booleanLiteral.value == t._2)
       assert(booleanLiteral.tokenLiteral() == t._2.toString)
+    }
+  }
+
+  "parsing infix expression" should "pass test" in {
+    List(
+      ("true == true", true, "==", true),
+      ("true != true", true, "!=", true),
+      ("false == false", false, "==", false),
+      ("false != false", false, "!=", false),
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[InfixExpression])
+      val infixExpression: InfixExpression = expressionStmt.expression.asInstanceOf[InfixExpression]
+      testInfixExpression(infixExpression, t._2, t._3, t._4)
+    }
+  }
+
+  "parsing prefix expression" should "pass test" in {
+    List(
+      ("!true", "!", true),
+      ("!false", "!", false)
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[PrefixExpression])
+
+      val prefixExpression: PrefixExpression = expressionStmt.expression.asInstanceOf[PrefixExpression]
+      assert(prefixExpression.operator == t._2)
+
+      testBooleanLiteral(prefixExpression.right, t._3)
+    }
+  }
+
+  "parsing operator precedence expression" should "pass test" in {
+    List(
+      ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+      ("(5 + 5) * 2", "((5 + 5) * 2)"),
+      ("2 / (5 + 5)", "(2 / (5 + 5))"),
+      ("-(5 + 5)", "(-(5 + 5))"),
+      ("!(true == true)", "(!(true == true))")
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+      val a = program.toString
+      assert(t._2 == a)
     }
   }
 

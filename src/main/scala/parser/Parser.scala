@@ -37,7 +37,8 @@ trait Parser {
     BANG -> parsePrefixExpression,
     MINUS -> parsePrefixExpression,
     TRUE -> parseBooleanLiteral,
-    FALSE -> parseBooleanLiteral
+    FALSE -> parseBooleanLiteral,
+    LPAREN -> parseGroupExpression
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -74,6 +75,15 @@ trait Parser {
         Option.empty[Expression]
       case Success(i) => Some(IntegerLiteral(token = token, value = i))
     }
+  }
+
+  private def parseGroupExpression: () => Option[Expression] = { () =>
+    nextToken()
+    val exp = parseExpression(LOWEST.id)
+    if (!expectPeek(RPAREN)) {
+      Option.empty[Expression]
+    }
+    exp
   }
 
   private def parsePrefixExpression: () => Option[Expression] = { () =>
