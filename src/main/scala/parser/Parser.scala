@@ -35,7 +35,9 @@ trait Parser {
     IDENT -> parseIdentifier,
     INT -> parseIntegerLiteral,
     BANG -> parsePrefixExpression,
-    MINUS -> parsePrefixExpression
+    MINUS -> parsePrefixExpression,
+    TRUE -> parseBooleanLiteral,
+    FALSE -> parseBooleanLiteral
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -58,6 +60,10 @@ trait Parser {
 
   private def parseIdentifier: () => Option[Identifier] = { () =>
     Some(Identifier(curToken, value = curToken.literal))
+  }
+
+  private def parseBooleanLiteral: () => Option[Expression] = { () =>
+    Some(BooleanLiteral(token = curToken, value = curTokenIs(TRUE)))
   }
 
   private def parseIntegerLiteral: () => Option[Expression] = { () =>

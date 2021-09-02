@@ -3,7 +3,7 @@
 
 package parser
 
-import ast.{ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
+import ast.{BooleanLiteral, ExpressionStatement, Identifier, InfixExpression, IntegerLiteral, LetStatement, PrefixExpression, Program, ReturnStatement, Statement}
 import lexer.Lexer
 import org.scalatest.FlatSpec
 import token.Tokens
@@ -209,7 +209,11 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
       ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
       ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
-      ("-1 + 2", "((-1) + 2)")
+      ("-1 + 2", "((-1) + 2)"),
+      ("true", "true"),
+      ("false", "false"),
+      ("3 > 5 == false", "((3 > 5) == false)"),
+      ("3 < 5 == true", "((3 < 5) == true)")
     ) foreach { t =>
       val input = t._1
       val lexer: Lexer = Lexer(input)
@@ -218,6 +222,28 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       assert(parser.getErrors.isEmpty)
       val a = program.toString
       assert(t._2 == a)
+    }
+  }
+
+  "simple boolean literals" should "pass the test" in {
+    List(
+      ("true;", true),
+      ("false;", false)
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[BooleanLiteral])
+      val booleanLiteral: BooleanLiteral = expressionStmt.expression.asInstanceOf[BooleanLiteral]
+      assert(booleanLiteral.value == t._2)
+      assert(booleanLiteral.tokenLiteral() == t._2.toString)
     }
   }
 
