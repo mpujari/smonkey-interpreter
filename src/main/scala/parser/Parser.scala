@@ -38,7 +38,8 @@ trait Parser {
     MINUS -> parsePrefixExpression,
     TRUE -> parseBooleanLiteral,
     FALSE -> parseBooleanLiteral,
-    LPAREN -> parseGroupExpression
+    LPAREN -> parseGroupExpression,
+    IF -> parseIfExpression
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -51,6 +52,27 @@ trait Parser {
     LT -> parseInfixExpression,
     GT -> parseInfixExpression
   )
+
+  private def parseIfExpression: () => Option[Expression] = { () =>
+    val token = curToken
+    if (!expectPeek(LPAREN)) {
+      Option.empty[Expression]
+    } else {
+      nextToken()
+      val condition = parseExpression(LOWEST.id)
+      if (!expectPeek(RPAREN)) {
+        Option.empty[Expression]
+      } else {
+        if (!expectPeek(LBRACE)) {
+          Option.empty[Expression]
+        } else {
+          val cons: BlockStatement = parseBlockStatement().orNull
+          // TODO pending with alternative
+          Some(IfExpression(token = token, condition = condition.orNull, consequence = cons, alternative = None.orNull))
+        }
+      }
+    }
+  }
 
   private def parseInfixExpression: Expression => Option[Expression] = { (left: Expression) =>
     val token = curToken
@@ -106,7 +128,7 @@ trait Parser {
   def parserProgram(): Program = {
     val statements: ListBuffer[Statement] = ListBuffer[Statement]()
     while (!curTokenIs(EOF)) {
-      prepareStatement() match {
+      parseStatement() match {
         case Some(value) => statements += value
         case None        => // no-ops
       }
@@ -115,7 +137,7 @@ trait Parser {
     Program(statements = statements.toList)
   }
 
-  private def prepareStatement(): Option[Statement] = curToken.`type` match {
+  private def parseStatement(): Option[Statement] = curToken.`type` match {
     case LET    => parseLetStatement()
     case RETURN => parseReturnStatement()
     case _      => parseExpressionStatement()
@@ -128,6 +150,20 @@ trait Parser {
       nextToken()
     }
     Some(ExpressionStatement(token = token, expression = expression.orNull)) // TODO revisit orNull
+  }
+
+  private def parseBlockStatement(): Option[BlockStatement] = {
+    val token = curToken
+    nextToken()
+    val statements = ListBuffer[Statement]()
+    while (!curTokenIs(RBRACE) && !curTokenIs(EOF)) {
+      val stmt: Option[Statement] = parseStatement()
+      if (stmt.nonEmpty) {
+        statements += stmt.get
+      }
+      nextToken()
+    }
+    Some(BlockStatement(token = token, statements = statements.toList))
   }
 
   private def parseExpression(precedence: Int): Option[Expression] =

@@ -3,7 +3,7 @@
 
 package parser
 
-import ast.{BooleanLiteral, Expression, Identifier, InfixExpression, IntegerLiteral}
+import ast._
 import org.scalatest.FlatSpec
 
 trait AbstractBaseSpec extends FlatSpec {

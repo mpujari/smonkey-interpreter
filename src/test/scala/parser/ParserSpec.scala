@@ -312,4 +312,26 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "parsing if expression" should "pass test" in {
+    val input = "if (x < y) { x }"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val expStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(expStmt.expression.isInstanceOf[IfExpression])
+    val exp = expStmt.expression.asInstanceOf[IfExpression]
+    testInfixExpression(exp.condition, "x", "<", "y")
+
+    assert(exp.consequence.statements.size == 1)
+    assert(exp.consequence.statements.head.isInstanceOf[ExpressionStatement])
+    val condExp = exp.consequence.statements.head.asInstanceOf[ExpressionStatement]
+
+    testIdentifier(condExp.expression, "x")
+    assert(exp.alternative == null)
+  }
+
 }
