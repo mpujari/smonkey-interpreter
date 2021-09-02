@@ -67,8 +67,20 @@ trait Parser {
           Option.empty[Expression]
         } else {
           val cons: BlockStatement = parseBlockStatement().orNull
+          val altBlock: Option[BlockStatement] = if (peekTokenIs(ELSE)) {
+            nextToken()
+            if (!expectPeek(LBRACE)) {
+              Option.empty[BlockStatement]
+            } else {
+              parseBlockStatement()
+            }
+          } else {
+            Option.empty[BlockStatement]
+          }
           // TODO pending with alternative
-          Some(IfExpression(token = token, condition = condition.orNull, consequence = cons, alternative = None.orNull))
+          Some(
+            IfExpression(token = token, condition = condition.orNull, consequence = cons, alternative = altBlock.orNull)
+          )
         }
       }
     }
