@@ -39,7 +39,8 @@ trait Parser {
     TRUE -> parseBooleanLiteral,
     FALSE -> parseBooleanLiteral,
     LPAREN -> parseGroupExpression,
-    IF -> parseIfExpression
+    IF -> parseIfExpression,
+    FUNCTION -> parseFunctionLiteral
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -52,6 +53,40 @@ trait Parser {
     LT -> parseInfixExpression,
     GT -> parseInfixExpression
   )
+
+  private def parseFunctionLiteral: () => Option[Expression] = { () =>
+    val token = curToken
+    if (!expectPeek(LPAREN)) {
+      Option.empty[Expression]
+    } else {
+      val parameters: List[Identifier] = parseFunctionParameters()
+      if (!expectPeek(LBRACE)) {
+        Option.empty
+      } else {
+        val block = parseBlockStatement()
+        Some(FunctionLiteral(token = token, parameters = parameters, body = block.orNull))
+      }
+    }
+  }
+
+  private def parseFunctionParameters(): List[Identifier] = {
+    val parameters = ListBuffer[Identifier]()
+    if (peekTokenIs(RPAREN)) {
+      nextToken()
+    } else {
+      nextToken()
+      parameters += Identifier(token = curToken, value = curToken.literal)
+      while (peekTokenIs(COMMA)) {
+        nextToken()
+        nextToken()
+        parameters += Identifier(token = curToken, value = curToken.literal)
+      }
+      if (!expectPeek(RPAREN)) {
+        parameters.clear()
+      }
+    }
+    parameters.toList
+  }
 
   private def parseIfExpression: () => Option[Expression] = { () =>
     val token = curToken

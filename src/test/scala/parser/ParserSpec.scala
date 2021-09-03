@@ -358,4 +358,49 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     testIdentifier(exp.alternative.statements.head.asInstanceOf[ExpressionStatement].expression, "y")
   }
 
+  "parsing function literal" should "pass test" in {
+    val input = "fn(x, y) { x + y; }"
+
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val expStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(expStmt.expression.isInstanceOf[FunctionLiteral])
+    val fn = expStmt.expression.asInstanceOf[FunctionLiteral]
+    assert(fn.parameters.size == 2)
+    testLiteralExpression(fn.parameters.head, "x")
+    testLiteralExpression(fn.parameters(1), "y")
+
+    assert(fn.body.statements.size == 1)
+    assert(fn.body.statements.head.isInstanceOf[ExpressionStatement])
+
+    val bodyExpStmt = fn.body.statements.head.asInstanceOf[ExpressionStatement]
+    testInfixExpression(bodyExpStmt.expression, "x", "+", "y")
+  }
+
+  "parsing function parameter parsing" should "pass test" in {
+    List(
+      ("fn() {};", List[String]()),
+      ("fn(x) {};", List[String]("x")),
+      ("fn(x, y, z) {};", List[String]("x", "y", "z"))
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expStmt.expression.isInstanceOf[FunctionLiteral])
+      val fn = expStmt.expression.asInstanceOf[FunctionLiteral]
+      assert(fn.parameters.map(_.token.literal) == t._2)
+    }
+  }
+
 }
