@@ -29,7 +29,8 @@ trait Parser {
     PLUS -> SUM.id,
     MINUS -> SUM.id,
     SLASH -> PRODUCT.id,
-    ASTERISK -> PRODUCT.id
+    ASTERISK -> PRODUCT.id,
+    LPAREN -> CALL.id
   )
   private val prefixParseFns: Map[TokenType, () => Option[Expression]] = Map(
     IDENT -> parseIdentifier,
@@ -51,8 +52,33 @@ trait Parser {
     EQ -> parseInfixExpression,
     NOT_EQ -> parseInfixExpression,
     LT -> parseInfixExpression,
-    GT -> parseInfixExpression
+    GT -> parseInfixExpression,
+    LPAREN -> parseCallExpression
   )
+
+  private def parseCallExpression: Expression => Option[Expression] = { (left: Expression) =>
+    val token: Token = curToken
+    Some(CallExpression(token = token, function = left, arguments = parseCallArguments()))
+  }
+
+  private def parseCallArguments(): List[Expression] = {
+    val args = ListBuffer[Expression]()
+    if (peekTokenIs(RPAREN)) {
+      nextToken()
+    } else {
+      nextToken()
+      args += parseExpression(LOWEST.id).get
+      while (peekTokenIs(COMMA)) {
+        nextToken()
+        nextToken()
+        args += parseExpression(LOWEST.id).get
+      }
+      if (!expectPeek(RPAREN)) {
+        args.clear()
+      }
+    }
+    args.toList
+  }
 
   private def parseFunctionLiteral: () => Option[Expression] = { () =>
     val token = curToken
