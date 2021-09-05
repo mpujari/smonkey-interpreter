@@ -3,9 +3,10 @@
 
 package ast
 
-import token.Token
+import token.{Token, Tokens}
 
 case class BooleanLiteral(token: Token, value: Boolean) extends Expression {
+  require(token.`type` == Tokens.TRUE || token.`type` == Tokens.FALSE)
 
   override def expressionNode(): Unit = {}
 

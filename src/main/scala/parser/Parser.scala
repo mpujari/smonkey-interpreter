@@ -263,11 +263,11 @@ trait Parser {
   private def parseReturnStatement(): Option[Statement] = {
     val token = curToken
     nextToken()
-    // TODO pending with expression parsing
-    while (!curTokenIs(SEMICOLON) && !curTokenIs(EOF)) {
+    val returnValue = parseExpression(LOWEST.id)
+    if (peekTokenIs(SEMICOLON)) {
       nextToken()
     }
-    Some(ReturnStatement(token = token, returnValue = None.orNull))
+    Some(ReturnStatement(token = token, returnValue = returnValue.orNull))
   }
 
   private def parseLetStatement(): Option[Statement] = {
@@ -281,10 +281,12 @@ trait Parser {
       if (!expectPeek(ASSIGN)) {
         Option.empty[Statement]
       } else {
-        while (!curTokenIs(SEMICOLON) && !curTokenIs(EOF)) {
+        nextToken()
+        val value = parseExpression(LOWEST.id)
+        if (peekTokenIs(SEMICOLON)) {
           nextToken()
         }
-        Some(LetStatement(token = letStmtToken, name = ident, value = None.orNull))
+        Some(LetStatement(token = letStmtToken, name = ident, value = value.orNull))
       }
     }
   }

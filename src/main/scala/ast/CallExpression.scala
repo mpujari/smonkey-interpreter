@@ -3,9 +3,10 @@
 
 package ast
 
-import token.Token
+import token.{Token, Tokens}
 
 case class CallExpression(token: Token, function: Expression, arguments: List[Expression]) extends Expression {
+  require(token.`type` == "(")
 
   override def expressionNode(): Unit = {}
 

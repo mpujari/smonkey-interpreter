@@ -3,11 +3,12 @@
 
 package ast
 
-import token.Token
+import token.{Token, Tokens}
 
 // if (<condition>) <consequence> else <alternative>
 case class IfExpression(token: Token, condition: Expression, consequence: BlockStatement, alternative: BlockStatement)
   extends Expression {
+  require(token.`type` == Tokens.IF)
 
   override def expressionNode(): Unit = {}
 

@@ -3,9 +3,10 @@
 
 package ast
 
-import token.Token
+import token.{Token, Tokens}
 
 case class IntegerLiteral(token: Token, value: Int) extends Expression {
+  require(token.`type` == Tokens.INT)
 
   override def expressionNode(): Unit = {}
 

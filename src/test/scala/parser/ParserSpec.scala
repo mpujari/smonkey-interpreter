@@ -33,7 +33,28 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
         assert(letStatement.name.value == ident)
         assert(letStatement.name.tokenLiteral == ident)
     }
+  }
 
+  "test Let statement some more" should "parse program" in {
+    List(
+      ("let x = 5;", "x", 5),
+      ("let y = true;", "y", true),
+      ("let foobar = y;", "foobar", "y")
+    ) foreach { t =>
+      val input: String = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+
+      val program: Program = parser.parserProgram()
+      assert(program.statements.size == 1)
+      assert(parser.getErrors.isEmpty)
+      val statement: Statement = program.statements.head
+      assert(statement.isInstanceOf[LetStatement])
+      // TODO testLetStatement(statement, t._2)
+      val letStatement: LetStatement = statement.asInstanceOf[LetStatement]
+
+      testLiteralExpression(letStatement.value, t._3)
+    }
   }
 
   "simple test Let statement with no semicolon" should "parse program" in {
@@ -60,26 +81,19 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
 
   }
 
-  ignore should "invalid input have error message" in {
-    val input: String =
-      """
-        let x 5;
-        let = 10;
-        let 838383
-        """.stripMargin
-    val lexer: Lexer = Lexer(input)
-    val parser: Parser = Parser(lexer)
-
-    val program: Program = parser.parserProgram()
-    assert(program.statements.isEmpty)
-    assert(parser.getErrors.nonEmpty)
-    assert(
-      parser.getErrors == List(
-        "expected next token to be =, got INT instead",
-        "expected next token to be IDENT, got = instead",
-        "expected next token to be IDENT, got INT instead"
-      )
-    )
+  "invalid input" should "have error message" in {
+    List(
+      "let x 5;" -> List("expected next token to be =, got INT instead"),
+      "let = 10;" -> List("expected next token to be IDENT, got = instead", "no prefix parse function for = found"),
+      "let 838383;" -> List("expected next token to be IDENT, got INT instead")
+    ).foreach { t =>
+      val input: String = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      parser.parserProgram()
+      assert(parser.getErrors.nonEmpty)
+      assert(t._2 == parser.getErrors)
+    }
   }
 
   "empty input" should "have error message" in {

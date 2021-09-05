@@ -3,9 +3,10 @@
 
 package ast
 
-import token.Token
+import token.{Token, Tokens}
 
 case class FunctionLiteral(token: Token, parameters: List[Identifier], body: BlockStatement) extends Expression {
+  require(token.`type` == Tokens.FUNCTION)
 
   override def expressionNode(): Unit = {}
 
