@@ -10,8 +10,15 @@ import scala.io.Source
 
 object Main {
 
-  lazy val monkeyFace: String = {
-    val x = Source.fromResource("monkey_face.txt")
+  lazy val monkeyHappyFace: String = {
+    val x = Source.fromResource("monkey_happy_face.txt")
+    val face = x.mkString
+    x.close()
+    face
+  }
+
+  lazy val monkeySadFace: String = {
+    val x = Source.fromResource("monkey_sad_face.txt")
     val face = x.mkString
     x.close()
     face
@@ -34,7 +41,7 @@ object Main {
       print(">> ")
       val line = scanner.nextLine()
       if (checkForExit(line)) {
-        println(monkeyFace)
+        println(monkeyHappyFace)
         println("Bye!!!")
         System.exit(0)
       }
@@ -52,7 +59,7 @@ object Main {
   }
 
   def printParseError(errors: List[String]): Unit = {
-    println(monkeyFace)
+    println(monkeySadFace)
     println("Woops! We ran into some monkey business here!")
     println(" parse error:")
     errors foreach { e =>
@@ -63,7 +70,7 @@ object Main {
   private val exitCmds = List(
     "exit",
     "quit",
-    "byte"
+    "bye"
   )
 
   private def checkForExit(str: String): Boolean = exitCmds.contains(str.toLowerCase())
