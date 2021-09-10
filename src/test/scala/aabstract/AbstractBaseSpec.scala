@@ -24,7 +24,7 @@ trait AbstractBaseSpec extends FlatSpec {
     assert(integer.value == expected)
   }
 
-  def testBooleanObject(o: obj.Object, expected: Boolean): Unit = {
+  def testBooleanObject(o: obj.Object, expected: Any): Unit = {
     assert(o.isInstanceOf[obj.Boolean])
     val b = o.asInstanceOf[obj.Boolean]
     assert(b.value == expected)
