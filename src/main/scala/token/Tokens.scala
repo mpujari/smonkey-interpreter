@@ -27,6 +27,8 @@ object Tokens {
   val NOT_EQ = "!="
   val LT = "<"
   val GT = ">"
+  val LT_EQ = "<="
+  val GT_EQ = ">="
 
   // delimiters
   val COMMA = ","

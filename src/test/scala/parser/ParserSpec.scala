@@ -189,7 +189,9 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       ("5 > 5;", 5, ">", 5),
       ("5 < 5;", 5, "<", 5),
       ("5 == 5;", 5, "==", 5),
-      ("5 != 5;", 5, "!=", 5)
+      ("5 != 5;", 5, "!=", 5),
+      ("5 <= 5;", 5, "<=", 5),
+      ("5 >= 5;", 5, ">=", 5)
     ) foreach { t =>
       val input = t._1
       val lexer: Lexer = Lexer(input)

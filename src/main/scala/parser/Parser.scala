@@ -26,6 +26,8 @@ trait Parser {
     NOT_EQ -> EQUALS.id,
     LT -> LESS_GREATER.id,
     GT -> LESS_GREATER.id,
+    LT_EQ -> LESS_EQ_GREATER.id,
+    GT_EQ -> LESS_EQ_GREATER.id,
     PLUS -> SUM.id,
     MINUS -> SUM.id,
     SLASH -> PRODUCT.id,
@@ -53,6 +55,8 @@ trait Parser {
     NOT_EQ -> parseInfixExpression,
     LT -> parseInfixExpression,
     GT -> parseInfixExpression,
+    LT_EQ -> parseInfixExpression,
+    GT_EQ -> parseInfixExpression,
     LPAREN -> parseCallExpression
   )
 
