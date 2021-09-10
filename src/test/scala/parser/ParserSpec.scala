@@ -3,6 +3,7 @@
 
 package parser
 
+import aabstract.AbstractBaseSpec
 import ast._
 import lexer.Lexer
 import org.scalatest.FlatSpec

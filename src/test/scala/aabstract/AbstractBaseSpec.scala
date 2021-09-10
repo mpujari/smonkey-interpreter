@@ -1,12 +1,34 @@
 // (c) 2021 Mahesh Pujari
 // This code is licensed under MIT license (see LICENSE for details)
 
-package parser
+package aabstract
 
 import ast._
+import evaluator.Evaluator
+import lexer.Lexer
 import org.scalatest.FlatSpec
+import parser.Parser
 
 trait AbstractBaseSpec extends FlatSpec {
+
+  def prepareEval(input: String): obj.Object = {
+    val evaluated = Lexer(input)
+    val parser = Parser(evaluated)
+    val program: Program = parser.parserProgram()
+    Evaluator.eval(program)
+  }
+
+  def testIntegerObject(o: obj.Object, expected: Int): Unit = {
+    assert(o.isInstanceOf[obj.Integer])
+    val integer = o.asInstanceOf[obj.Integer]
+    assert(integer.value == expected)
+  }
+
+  def testBooleanObject(o: obj.Object, expected: Boolean): Unit = {
+    assert(o.isInstanceOf[obj.Boolean])
+    val b = o.asInstanceOf[obj.Boolean]
+    assert(b.value == expected)
+  }
 
   def testIntegerLiteral(expression: Expression, value: Int): Unit = {
     assert(expression.isInstanceOf[IntegerLiteral])

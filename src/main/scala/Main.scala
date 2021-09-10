@@ -2,6 +2,7 @@
 // This code is licensed under MIT license (see LICENSE for details)
 
 import ast.Program
+import evaluator.Evaluator
 import lexer.Lexer
 import parser.Parser
 
@@ -53,7 +54,10 @@ object Main {
       if (p.getErrors.nonEmpty) {
         printParseError(p.getErrors)
       } else {
-        println(program.toString)
+        val eval = Evaluator.eval(program)
+        if (eval != null) {
+          println(eval.inspect())
+        }
       }
     }
   }

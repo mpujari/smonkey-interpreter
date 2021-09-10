@@ -3,7 +3,7 @@
 
 package ast
 
-import token.{Token, Tokens}
+import token.Token
 
 case class CallExpression(token: Token, function: Expression, arguments: List[Expression]) extends Expression {
   require(token.`type` == "(")
