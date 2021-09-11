@@ -9,5 +9,10 @@ package object obj {
 
   val BOOLEAN_OBJ: String = "BOOL"
 
-  val NULL: obj.Null = Null()
+  val NULL: obj.Null = Null.NULL
+
+  val TRUE: obj.Boolean = Boolean.TRUE
+
+  val FALSE: obj.Boolean = Boolean.FALSE
+
 }

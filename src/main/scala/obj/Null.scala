@@ -10,3 +10,11 @@ case class Null() extends obj.Object {
   override def inspect(): String = "null"
 
 }
+
+object Null {
+
+  val NULL: Null = new Null()
+
+  def apply(): Null = NULL
+
+}

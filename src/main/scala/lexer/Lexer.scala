@@ -55,8 +55,22 @@ trait Lexer {
           Token(BANG, chStr)
         }
       case '*' => Token(ASTERISK, chStr)
-      case '<' => Token(LT, chStr)
-      case '>' => Token(GT, chStr)
+      case '<' =>
+        if (peekChar() == '=') {
+          val c = ch
+          readChar()
+          Token(LT_EQ, c.toString + ch.toString)
+        } else {
+          Token(LT, chStr)
+        }
+      case '>' =>
+        if (peekChar() == '=') {
+          val c = ch
+          readChar()
+          Token(GT_EQ, c.toString + ch.toString)
+        } else {
+          Token(GT, chStr)
+        }
       case NIL => Token(EOF, "")
       case _ =>
         if (isLetter(ch)) {
