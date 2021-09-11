@@ -7,9 +7,11 @@ package object obj {
 
   val INTEGER_OBJ: String = "INTEGER"
 
-  val BOOLEAN_OBJ: String = "BOOL"
+  val BOOLEAN_OBJ: String = "BOOLEAN"
 
   val RETURN_OBJ: String = "RETURN"
+
+  val ERROR_OBJ: String = "ERROR"
 
   val NULL: obj.Null = Null.NULL
 

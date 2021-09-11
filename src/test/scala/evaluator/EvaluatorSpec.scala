@@ -151,4 +151,32 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "Error Handling test" should "pass the tests" in {
+    List(
+      ("5 + true;", "type mismatch: INTEGER + BOOLEAN"),
+      ("5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"),
+      ("-true", "unknown operator: -BOOLEAN"),
+      ("true + false;", "unknown operator: BOOLEAN + BOOLEAN"),
+      ("5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"),
+      ("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
+      (
+        """
+          if (10 > 1) {
+            if (10 > 1) {
+              return true + false;
+            }
+              return 1;
+            }
+          }
+        """,
+        "unknown operator: BOOLEAN + BOOLEAN",
+      )
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      assert(evaluated.isInstanceOf[obj.Error])
+      val error = evaluated.asInstanceOf[obj.Error]
+      assert(error.errorMsg == t._2, s"Failed for '${t._1}'")
+    }
+  }
+
 }

@@ -4,35 +4,60 @@
 package evaluator
 
 import ast._
-import obj.{FALSE, NULL, Return, TRUE}
+import obj.{ERROR_OBJ, FALSE, INTEGER_OBJ, NULL, Return, TRUE}
 
 object Evaluator {
 
   def eval(node: Node): obj.Object =
     node match {
-      case p: Program           => evalProgram(p.statements)
-      case pe: PrefixExpression => evalPrefixExpression(pe)
+      case p: Program => evalProgram(p.statements)
+      case rs: ReturnStatement =>
+        val returnValue = eval(rs.returnValue)
+        if (isError(returnValue)) {
+          return returnValue
+        }
+        obj.Return(returnValue)
+      case pe: PrefixExpression =>
+        val e = eval(pe.right)
+        if (isError(e)) {
+          return e
+        }
+        evalPrefixExpression(pe.operator, e)
       case ie: InfixExpression =>
         val evalLeft = eval(ie.left)
+        if (isError(evalLeft)) {
+          return evalLeft
+        }
         val evalRight = eval(ie.right)
+        if (isError(evalRight)) {
+          return evalRight
+        }
         evalInfixExpression(ie.operator, evalLeft, evalRight)
       case es: ExpressionStatement => eval(es.expression)
       case ife: IfExpression       => evalIfExpression(ife)
       case bs: BlockStatement      => evalBlockStatement(bs)
       case i: IntegerLiteral       => obj.Integer(i.value)
       case b: BooleanLiteral       => nativeBoolToBooleanObj(b.value)
-      case rs: ReturnStatement     => obj.Return(eval(rs.returnValue))
-      case _                       => null
+
+      case _ => null
+    }
+
+  private def isError(o: obj.Object): Boolean =
+    if (o != null) {
+      o.`type`() == ERROR_OBJ
+    } else {
+      false
     }
 
   private def nativeBoolToBooleanObj(b: Boolean): obj.Boolean = if (b) TRUE else FALSE
 
   private def evalInfixExpression(operator: String, left: obj.Object, right: obj.Object): obj.Object =
     (operator, left, right) match {
-      case (_, _: obj.Integer, _: obj.Integer) => evalIntegerInfixExpression(operator, left, right)
-      case ("==", _, _)                        => nativeBoolToBooleanObj(left == right)
-      case ("!=", _, _)                        => nativeBoolToBooleanObj(left != right)
-      case _                                   => NULL
+      case (_, _: obj.Integer, _: obj.Integer)   => evalIntegerInfixExpression(operator, left, right)
+      case ("==", _, _)                          => nativeBoolToBooleanObj(left == right)
+      case ("!=", _, _)                          => nativeBoolToBooleanObj(left != right)
+      case (o, l, r) if l.`type`() != r.`type`() => obj.Error(s"type mismatch: ${l.`type`()} $o ${r.`type`()}")
+      case (o, l, r)                             => obj.Error(s"unknown operator: ${l.`type`()} $o ${r.`type`()}")
     }
 
   private def evalIntegerInfixExpression(operator: String, left: obj.Object, right: obj.Object): obj.Object = {
@@ -53,16 +78,17 @@ object Evaluator {
     }
   }
 
-  private def evalPrefixExpression(pe: PrefixExpression): obj.Object =
-    pe.operator match {
-      case "!" => evalBangOperator(eval(pe.right))
-      case "-" => evalMinusPrefixOperator(eval(pe.right))
-      case _   => NULL
+  private def evalPrefixExpression(operator: String, right: obj.Object): obj.Object =
+    operator match {
+      case "!" => evalBangOperator(right)
+      case "-" => evalMinusPrefixOperator(right)
+      case _   => obj.Error(s"unknown operator: $operator${right.`type`()}")
     }
 
   private def evalMinusPrefixOperator(right: obj.Object): obj.Object = right match {
-    case obj.Integer(value) => obj.Integer(-1 * value)
-    case _                  => NULL
+    case obj.Integer(value)             => obj.Integer(-1 * value)
+    case r if r.`type`() != INTEGER_OBJ => obj.Error(s"unknown operator: -${r.`type`()}")
+    case _                              => NULL
   }
 
   private def evalBangOperator(right: obj.Object): obj.Object =
@@ -75,6 +101,9 @@ object Evaluator {
 
   private def evalIfExpression(ife: IfExpression): obj.Object = {
     val e = eval(ife.condition)
+    if (isError(e)) {
+      return e
+    }
     if (isTruth(e)) {
       eval(ife.consequence)
     } else if (ife.alternative != null) {
@@ -98,6 +127,7 @@ object Evaluator {
       result = eval(s)
       result match {
         case value: Return => return value
+        case e: obj.Error  => return e
         case _             => // no-ops
       }
     }
@@ -109,8 +139,9 @@ object Evaluator {
     statements.foreach { s: Statement =>
       result = eval(s)
       result match {
-        case r: Return => return r.returnValue
-        case _         => // no-ops
+        case r: Return    => return r.returnValue
+        case e: obj.Error => return e
+        case _            => // no-ops
       }
     }
     result
