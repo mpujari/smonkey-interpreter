@@ -138,4 +138,17 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test return statements" should "pass the tests" in {
+    List(
+      ("return 10;", 10),
+      ("return 10; 9;", 10),
+      ("return 2 * 5; 9;", 10),
+      ("9; return 2 * 5; 9;", 10),
+      ("if (10 > 1) {if (10 > 1) {return 10;}return 1;}", 10)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testIntegerObject(evaluated, t._2, Some(s"Failed for '${t._1}'"))
+    }
+  }
+
 }

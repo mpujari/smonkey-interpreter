@@ -9,6 +9,8 @@ package object obj {
 
   val BOOLEAN_OBJ: String = "BOOL"
 
+  val RETURN_OBJ: String = "RETURN"
+
   val NULL: obj.Null = Null.NULL
 
   val TRUE: obj.Boolean = Boolean.TRUE
