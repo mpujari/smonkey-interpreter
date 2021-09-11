@@ -4,13 +4,13 @@
 package evaluator
 
 import ast._
-import obj.{FALSE, NULL, TRUE}
+import obj.{FALSE, NULL, Return, TRUE}
 
 object Evaluator {
 
   def eval(node: Node): obj.Object =
     node match {
-      case p: Program           => evalStatements(p.statements)
+      case p: Program           => evalProgram(p.statements)
       case pe: PrefixExpression => evalPrefixExpression(pe)
       case ie: InfixExpression =>
         val evalLeft = eval(ie.left)
@@ -18,9 +18,10 @@ object Evaluator {
         evalInfixExpression(ie.operator, evalLeft, evalRight)
       case es: ExpressionStatement => eval(es.expression)
       case ife: IfExpression       => evalIfExpression(ife)
-      case bs: BlockStatement      => evalStatements(bs.statements)
+      case bs: BlockStatement      => evalBlockStatement(bs)
       case i: IntegerLiteral       => obj.Integer(i.value)
       case b: BooleanLiteral       => nativeBoolToBooleanObj(b.value)
+      case rs: ReturnStatement     => obj.Return(eval(rs.returnValue))
       case _                       => null
     }
 
@@ -91,10 +92,26 @@ object Evaluator {
       case _     => true
     }
 
-  private def evalStatements(statements: List[Statement]): obj.Object = {
+  private def evalBlockStatement(blockStatement: BlockStatement): obj.Object = {
+    var result: obj.Object = NULL
+    blockStatement.statements.foreach { s: Statement =>
+      result = eval(s)
+      result match {
+        case value: Return => return value
+        case _             => // no-ops
+      }
+    }
+    result
+  }
+
+  private def evalProgram(statements: List[Statement]): obj.Object = {
     var result: obj.Object = NULL
     statements.foreach { s: Statement =>
       result = eval(s)
+      result match {
+        case r: Return => return r.returnValue
+        case _         => // no-ops
+      }
     }
     result
   }
