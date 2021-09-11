@@ -4,6 +4,7 @@
 package evaluator
 
 import aabstract.AbstractBaseSpec
+import obj.NULL
 import org.scalatest.FlatSpec
 
 class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
@@ -113,6 +114,27 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     ) foreach { t =>
       val evaluated: obj.Object = prepareEval(t._1)
       testIntegerObject(evaluated, t._2)
+    }
+  }
+
+  "test if-else expression" should "pass the tests" in {
+    List(
+      ("if (true) { 10 }", 10),
+      ("if (false) { 10 }", NULL),
+      ("if (1) { 10 }", 10),
+      ("if (1 < 2) { 10 }", 10),
+      ("if (1 > 2) { 10 }", NULL),
+      ("if (1 > 2) { 10 } else { 20 }", 20),
+      ("if (1 < 2) { 10 } else { 20 }", 10),
+      ("if (5 * 5 + 10 > 34) { 99 } else { 100 }", 99),
+      ("if ((1000 / 2) + 250 * 2 == 1000) { 9999 }", 9999)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      if (t._2 == NULL) {
+        testNullObject(evaluated)
+      } else {
+        testIntegerObject(evaluated, t._2.toString.toInt, Some(s"Failed for '${t._1}'"))
+      }
     }
   }
 

@@ -17,6 +17,8 @@ object Evaluator {
         val evalRight = eval(ie.right)
         evalInfixExpression(ie.operator, evalLeft, evalRight)
       case es: ExpressionStatement => eval(es.expression)
+      case ife: IfExpression       => evalIfExpression(ife)
+      case bs: BlockStatement      => evalStatements(bs.statements)
       case i: IntegerLiteral       => obj.Integer(i.value)
       case b: BooleanLiteral       => nativeBoolToBooleanObj(b.value)
       case _                       => null
@@ -68,6 +70,25 @@ object Evaluator {
       case FALSE => TRUE
       case NULL  => TRUE
       case _     => FALSE
+    }
+
+  private def evalIfExpression(ife: IfExpression): obj.Object = {
+    val e = eval(ife.condition)
+    if (isTruth(e)) {
+      eval(ife.consequence)
+    } else if (ife.alternative != null) {
+      eval(ife.alternative)
+    } else {
+      NULL
+    }
+  }
+
+  private def isTruth(o: obj.Object): scala.Boolean =
+    o match {
+      case NULL  => false
+      case TRUE  => true
+      case FALSE => false
+      case _     => true
     }
 
   private def evalStatements(statements: List[Statement]): obj.Object = {

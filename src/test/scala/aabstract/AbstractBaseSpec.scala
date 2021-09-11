@@ -6,6 +6,7 @@ package aabstract
 import ast._
 import evaluator.Evaluator
 import lexer.Lexer
+import obj.NULL
 import org.scalatest.FlatSpec
 import parser.Parser
 
@@ -18,10 +19,12 @@ trait AbstractBaseSpec extends FlatSpec {
     Evaluator.eval(program)
   }
 
-  def testIntegerObject(o: obj.Object, expected: Int): Unit = {
-    assert(o.isInstanceOf[obj.Integer])
+  def testNullObject(o: obj.Object): Unit = assert(o == NULL)
+
+  def testIntegerObject(o: obj.Object, expected: Int, errorMsg: Option[String] = None): Unit = {
+    errorMsg.fold(assert(o.isInstanceOf[obj.Integer]))(e => assert(o.isInstanceOf[obj.Integer], e))
     val integer = o.asInstanceOf[obj.Integer]
-    assert(integer.value == expected)
+    errorMsg.fold(assert(integer.value == expected))(e => assert(integer.value == expected, e))
   }
 
   def testBooleanObject(o: obj.Object, expected: Any): Unit = {
