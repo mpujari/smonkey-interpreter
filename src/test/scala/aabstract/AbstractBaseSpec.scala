@@ -6,7 +6,7 @@ package aabstract
 import ast._
 import evaluator.Evaluator
 import lexer.Lexer
-import obj.NULL
+import obj.{Environment, NULL}
 import org.scalatest.FlatSpec
 import parser.Parser
 
@@ -16,6 +16,7 @@ trait AbstractBaseSpec extends FlatSpec {
     val evaluated = Lexer(input)
     val parser = Parser(evaluated)
     val program: Program = parser.parserProgram()
+    implicit val env: Environment = new Environment()
     Evaluator.eval(program)
   }
 
