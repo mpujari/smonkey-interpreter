@@ -5,10 +5,13 @@ package evaluator
 
 import ast._
 import obj.{ERROR_OBJ, FALSE, INTEGER_OBJ, NULL, Return, TRUE}
+import obj._
+
+import scala.collection.mutable.ListBuffer
 
 object Evaluator {
 
-  def eval(node: Node): obj.Object =
+  def eval(node: Node)(implicit env: Environment): obj.Object =
     node match {
       case p: Program => evalProgram(p.statements)
       case rs: ReturnStatement =>
@@ -38,18 +41,85 @@ object Evaluator {
       case bs: BlockStatement      => evalBlockStatement(bs)
       case i: IntegerLiteral       => obj.Integer(i.value)
       case b: BooleanLiteral       => nativeBoolToBooleanObj(b.value)
-
-      case _ => null
+      case i: Identifier           => evalIdentifier(i)
+      case ls: LetStatement =>
+        val v = eval(ls.value)
+        if (isError(v)) {
+          v
+        } else {
+          env.set(ls.name.value, v)
+          v
+        }
+      case fn: FunctionLiteral =>
+        obj.Function(fn.parameters, body = fn.body, env = env)
+      case c: CallExpression =>
+        val e = eval(c.function)
+        if (isError(e)) {
+          return e
+        }
+        val args = evalExpressions(c.arguments)
+        if (args.length == 1 && isError(args.head)) {
+          return args.head
+        }
+        applyFunction(e, args)
+      case _ => obj.Error(s"unknown node type '${node.tokenLiteral()}'")
     }
 
-  private def isError(o: obj.Object): Boolean =
+  private def evalExpressions(expressions: List[Expression])(implicit environment: Environment): List[obj.Object] = {
+    val result: ListBuffer[obj.Object] = ListBuffer()
+    expressions foreach { exp =>
+      val e = eval(exp)
+      if (isError(e)) {
+        return List(e)
+      }
+      result += e
+    }
+    result.toList
+  }
+
+  private def applyFunction(fn: obj.Object, args: List[obj.Object]): obj.Object = {
+    if (!fn.isInstanceOf[obj.Function]) {
+      return obj.Error(s"not a function: ${fn.`type`()}")
+    }
+    val function = fn.asInstanceOf[obj.Function]
+    val extendedEnv: Environment = extendFunctionEnv(function, args)
+    val evaluated = eval(function.body)(extendedEnv)
+    unwrapReturnValue(evaluated)
+  }
+
+  private def extendFunctionEnv(function: obj.Function, args: List[obj.Object]): Environment = {
+    val env = Environment(outerEnv = Some(function.env))
+    function.parameters.zipWithIndex.foreach { i =>
+      if (i._2 < args.length) {
+        env.set(i._1.value, args(i._2))
+      }
+    }
+    env
+  }
+
+  private def unwrapReturnValue(value: obj.Object): obj.Object =
+    value match {
+      case r: Return => r.returnValue
+      case _         => value
+    }
+
+  private def evalIdentifier(i: Identifier)(implicit environment: Environment): obj.Object =
+    environment
+      .get(i.value)
+      .fold {
+        obj.Error(s"identifier not found: ${i.value}").asInstanceOf[obj.Object]
+      } { v =>
+        v
+      }
+
+  private def isError(o: obj.Object): scala.Boolean =
     if (o != null) {
       o.`type`() == ERROR_OBJ
     } else {
       false
     }
 
-  private def nativeBoolToBooleanObj(b: Boolean): obj.Boolean = if (b) TRUE else FALSE
+  private def nativeBoolToBooleanObj(b: scala.Boolean): obj.Boolean = if (b) TRUE else FALSE
 
   private def evalInfixExpression(operator: String, left: obj.Object, right: obj.Object): obj.Object =
     (operator, left, right) match {
@@ -99,7 +169,7 @@ object Evaluator {
       case _     => FALSE
     }
 
-  private def evalIfExpression(ife: IfExpression): obj.Object = {
+  private def evalIfExpression(ife: IfExpression)(implicit env: Environment): obj.Object = {
     val e = eval(ife.condition)
     if (isError(e)) {
       return e
@@ -121,7 +191,7 @@ object Evaluator {
       case _     => true
     }
 
-  private def evalBlockStatement(blockStatement: BlockStatement): obj.Object = {
+  private def evalBlockStatement(blockStatement: BlockStatement)(implicit env: Environment): obj.Object = {
     var result: obj.Object = NULL
     blockStatement.statements.foreach { s: Statement =>
       result = eval(s)
@@ -134,7 +204,7 @@ object Evaluator {
     result
   }
 
-  private def evalProgram(statements: List[Statement]): obj.Object = {
+  private def evalProgram(statements: List[Statement])(implicit env: Environment): obj.Object = {
     var result: obj.Object = NULL
     statements.foreach { s: Statement =>
       result = eval(s)

@@ -159,6 +159,7 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("true + false;", "unknown operator: BOOLEAN + BOOLEAN"),
       ("5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"),
       ("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
+      ("foobar", "identifier not found: foobar"),
       (
         """
           if (10 > 1) {
@@ -177,6 +178,59 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       val error = evaluated.asInstanceOf[obj.Error]
       assert(error.errorMsg == t._2, s"Failed for '${t._1}'")
     }
+  }
+
+  "let statement with env" should "pass the tests" in {
+    List(
+      ("let a = 5; a;", 5),
+      ("let a = 5 * 5; a;", 25),
+      ("let a = 5; let b = a; b;", 5),
+      ("let a = 5; let b = a; let c = a + b + 5; c;", 15)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testIntegerObject(evaluated, expected = t._2)
+    }
+  }
+
+  "test function param, body" should "pass the tests" in {
+    List(
+      "fn(x) { x + 2; };"
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t)
+      assert(evaluated.isInstanceOf[obj.Function])
+      val fn: obj.Function = evaluated.asInstanceOf[obj.Function]
+      assert(fn.parameters.size == 1)
+      assert(fn.parameters.head.toString == "x")
+      assert(fn.body.toString == "(x + 2)")
+    }
+  }
+
+  "test function calls" should "pass the tests" in {
+    List(
+      ("let identity = fn(x) { x; }; identity(5);", 5),
+      ("let identity = fn(x) { return x; }; identity(5);", 5),
+      ("let double = fn(x) { x * 2; }; double(5);", 10),
+      ("let add = fn(x, y) { x + y; }; add(5, 5);", 10),
+      ("let add = fn(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20),
+      ("fn(x) { x; }(5)", 5)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testIntegerObject(evaluated, t._2, Some(s"Failed for '${t._1}''"))
+    }
+  }
+
+  "test closures" should "pass the tests" in {
+    val testData =
+      """
+        |let newAdder = fn(x) {
+        |   fn(y) { x + y };
+        |};
+        |
+        |let addTwo = newAdder(2);
+        |addTwo(2);
+        |""".stripMargin
+
+    testIntegerObject(prepareEval(testData), 4)
   }
 
 }

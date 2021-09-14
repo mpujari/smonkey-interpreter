@@ -7,6 +7,6 @@ trait Statement extends Node {
 
   def statementNode(): Unit
 
-  override def toString: String = ???
+  override def toString: String = ""
 
 }

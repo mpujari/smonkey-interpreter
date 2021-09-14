@@ -4,6 +4,7 @@
 import ast.Program
 import evaluator.Evaluator
 import lexer.Lexer
+import obj.Environment
 import parser.Parser
 
 import java.util.Scanner
@@ -38,6 +39,7 @@ object Main {
 
   def start(): Unit = {
     val scanner = new Scanner(System.in)
+    implicit val env: Environment = new Environment()
     while (true) {
       print(">> ")
       val line = scanner.nextLine()
@@ -47,7 +49,6 @@ object Main {
         System.exit(0)
       }
       val lexer = Lexer(line)
-
       val p: Parser = Parser(lexer)
       val program: Program = p.parserProgram()
 

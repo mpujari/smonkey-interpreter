@@ -13,6 +13,8 @@ package object obj {
 
   val ERROR_OBJ: String = "ERROR"
 
+  val FUNCTION_OBJ: String = "FUNCTION"
+
   val NULL: obj.Null = Null.NULL
 
   val TRUE: obj.Boolean = Boolean.TRUE
