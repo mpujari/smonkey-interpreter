@@ -78,7 +78,13 @@ trait Lexer {
           val `type` = keywords(literal)
           return Token(`type`, literal)
         } else if (isDigit(ch)) {
-          return Token(INT, readNumber())
+          val no: String = readNumber()
+          if (no.contains(".")) {
+            // its a float
+            return Token(FLOAT, no)
+          } else {
+            return Token(INT, no)
+          }
         } else {
           Token(ILLEGAL, chStr)
         }
@@ -90,7 +96,7 @@ trait Lexer {
 
   def isLetter(ch: Char): Boolean = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
 
-  def isDigit(ch: Char): Boolean = ch >= '0' && ch <= '9'
+  def isDigit(ch: Char): Boolean = ch >= '0' && ch <= '9' || ch == '.'
 
   def readIdentifier(): String = {
     var chStr = ""

@@ -39,7 +39,7 @@ object Main {
 
   def start(): Unit = {
     val scanner = new Scanner(System.in)
-    implicit val env: Environment = new Environment()
+    implicit val env: Environment = Environment()
     while (true) {
       print(">> ")
       val line = scanner.nextLine()

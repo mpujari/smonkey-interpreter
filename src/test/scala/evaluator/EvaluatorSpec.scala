@@ -22,6 +22,8 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("false", false),
       ("!-5", false),
       ("!!-5", true),
+      ("!-0.5", false),
+      ("!!-0.5", true),
       ("true", true),
       ("false", false),
       ("1 < 2", true),
@@ -36,6 +38,54 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("1 <= 1", true),
       ("1 >= 5", false),
       ("5 <= 1", false),
+      ("0.1 < 0.2", true),
+      ("0.1 > 0.2", false),
+      ("0.1 < 0.1", false),
+      ("0.1 > 0.1", false),
+      ("0.1 == 0.1", true),
+      ("0.1 != 0.1", false),
+      ("0.1 == 0.2", false),
+      ("0.1 != 0.2", true),
+      ("0.1 >= 0.1", true),
+      ("0.1 <= 0.1", true),
+      ("0.1 >= 0.5", false),
+      ("0.5 <= 0.1", false),
+      ("-0.1 < -0.2", false),
+      ("-0.1 > -0.2", true),
+      ("-0.1 < -0.1", false),
+      ("-0.1 > -0.1", false),
+      ("-0.1 == -0.1", true),
+      ("-0.1 != -0.1", false),
+      ("-0.1 == -0.2", false),
+      ("-0.1 != -0.2", true),
+      ("-0.1 >= -0.1", true),
+      ("-0.1 <= -0.1", true),
+      ("-0.1 >= -0.5", true),
+      ("-0.5 <= -0.1", true),
+      ("0.1 < 2", true),
+      ("0.1 > 2", false),
+      ("0.1 < 1", true),
+      ("0.1 > 1", false),
+      ("0.1 == 1", false),
+      ("0.1 != 1", true),
+      ("0.1 == 2", false),
+      ("0.1 != 2", true),
+      ("0.1 >= 1", false),
+      ("0.1 <= 1", true),
+      ("0.1 >= 5", false),
+      ("0.1 <= 1", true),
+      ("1 < 0.2", false),
+      ("1 > 0.2", true),
+      ("1 < 0.1", false),
+      ("1 > 0.1", true),
+      ("1 == 0.1", false),
+      ("1 != 0.1", true),
+      ("1 == 0.2", false),
+      ("1 != 0.2", true),
+      ("1 >= 0.1", true),
+      ("1 <= 0.1", false),
+      ("1 >= 0.5", true),
+      ("1 <= 0.1", false),
       ("!(1 >= 1)", false),
       ("!(1 <= 1)", false),
       ("!(1 >= 5)", true),
@@ -51,7 +101,7 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("(1 > 2) == false", true)
     ) foreach { t =>
       val evaluated: obj.Object = prepareEval(t._1)
-      testBooleanObject(evaluated, t._2)
+      testBooleanObject(evaluated, t._2, Some(s"Test failed for '${t._1}'"))
     }
   }
 
@@ -66,12 +116,23 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("!!!false", true),
       ("!!5", true),
       ("(5 > 5 == true) != false", false),
+      ("(0.5 > 0.5 == true) != false", false),
       ("(10 + 2) * 30 == 300 + 20 * 3", true),
+      ("(10.0 + 2.0) * 30.0 == 300.0 + 20.0 * 3.0", true),
+      ("(10.01 + 2.01) * 30.01 == 300.01 + 20.01 * 3.01 + 0.4801", true),
       ("(5 > 5 == true) != false", false),
+      ("(5.01 > 5.01 == true) != false", false),
+      ("(-5.01 > -5.01 == true) != false", false),
       ("500 / 2 != 250", false),
       ("500 / 2 == 250", true),
+      ("500.0 / 2.0 != 250.0", false),
+      ("500.01 / 2.01 == 248.7612", true),
       ("5 * 10 > 40 + 5", true),
       ("5 * 10 < 40 + 5", false),
+      ("5.0 * 10.0 > 40.0 + 5.0", true),
+      ("5.0 * 10.0 < 40.0 + 5.0", false),
+      ("5 * 10.0 > 40 + 5.0", true),
+      ("5.0 * 10 < 40.0 + 5", false),
       ("3 + 4 * 5 == 3 * 1 + 4 * 5", true),
       ("3 + 4 * 5 != 3 * 1 + 4 * 5", false),
       ("3 + 4 * 5 <= 3 * 1 + 4 * 5", true),
@@ -79,10 +140,26 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("3 + 4 * 5 < 3 * 1 + 4 * 5", false),
       ("3 + 4 * 5 > 3 * 1 + 4 * 5", false),
       ("3 + 4 * 5 > 3 * 1 + 4 * 5", false),
-      ("3 + 4 * 5 < 3 * 1 + 4 * 5", false)
+      ("3 + 4 * 5 < 3 * 1 + 4 * 5", false),
+      ("3.0 + 4.0 * 5.0 == 3.0 * 1.0 + 4.0 * 5.0", true),
+      ("3.0 + 4.0 * 5.0 != 3.0 * 1.0 + 4.0 * 5.0", false),
+      ("3.0 + 4.0 * 5.0 <= 3.0 * 1.0 + 4.0 * 5.0", true),
+      ("3.0 + 4.0 * 5.0 >= 3.0 * 1.0 + 4.0 * 5.0", true),
+      ("3.0 + 4.0 * 5.0 < 3.0 * 1.0 + 4.0 * 5.0", false),
+      ("3.0 + 4.0 * 5.0 > 3.0 * 1.0 + 4.0 * 5.0", false),
+      ("3.0 + 4.0 * 5.0 > 3.0 * 1.0 + 4.0 * 5.0", false),
+      ("3.0 + 4.0 * 5.0 < 3.0 * 1.0 + 4.0 * 5.0", false),
+      ("3.1 + 4.1 * 5.1 == 3.1 * 1.1 + 4.1 * 5.1 - 0.31", true),
+      ("3.1 + 4.1 * 5.1 != 3.1 * 1.1 + 4.1 * 5.1 - 0.31", false),
+      ("3.1 + 4.1 * 5.1 <= 3.1 * 1.1 + 4.1 * 5.1 - 0.31", true),
+      ("3.1 + 4.1 * 5.1 >= 3.1 * 1.1 + 4.1 * 5.1 - 0.31", true),
+      ("3.1 + 4.1 * 5.1 < 3.1 * 1.1 + 4.1 * 5.1 - 0.31", false),
+      ("3.1 + 4.1 * 5.1 > 3.1 * 1.1 + 4.1 * 5.1 - 0.31", false),
+      ("3.1 + 4.1 * 5.1 > 3.1 * 1.1 + 4.1 * 5.1 - 0.31", false),
+      ("3.1 + 4.1 * 5.1 < 3.1 * 1.1 + 4.1 * 5.1 - 0.31", false)
     ) foreach { t =>
       val evaluated: obj.Object = prepareEval(t._1)
-      testBooleanObject(evaluated, t._2)
+      testBooleanObject(evaluated, t._2, Some(s"Failed for '${t._1}'"))
     }
   }
 
@@ -117,6 +194,39 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test eval infix operator with float" should "pass the tests" in {
+    List(
+      ("5.01 + 5.001", 10.011f),
+      ("0.0 + 0.0", 0f),
+      ("5.01 - 5.01", 0f),
+      ("-5.01 - 5.01", -10.02f),
+      ("1.01 * 0.0", 0.0f),
+      ("-1.01 * -1.01", 1.0201f),
+      ("-1.01 * -10.01", 10.1101f),
+      ("1.01 * -10.01", -10.1101f),
+      ("5.0", 5f),
+      ("10.0", 10f),
+      ("-5.0", -5f),
+      ("-10.0", -10f),
+      ("5.01 + 5.01 + 5.01 + 5.01 - 10.01", 10.030001f), // TODO revisit me, for precision
+      ("2.0 * 2.0 * 2.0 * 2.0 * 2.01", 32.16f),
+      ("2.0 * -2.0 * 2.0 * 2.0 * -2.01", 32.16f),
+      ("-2.0 * -2.0 * 2.0 * 2.0 * -2.01", -32.16f),
+      ("-50.01 + 100.01 + -50.01", -0.009994507f), // TODO revisit me, for precision
+      ("5.01 * 2.01 + 10.01", 20.080101f),
+      ("5.0 + 2.0 * 10.0", 25.0f),
+      ("20.0 + 2.0 * -10.0", 0f),
+      ("50.0 / 2.0 * 2.0 + 10.0", 60.0f),
+      ("2.0 * (5.0 + 10.0)", 30.0f),
+      ("3.0 * 3.0 * 3.0 + 10.0", 37.0f),
+      ("3.0 * (3.0 * 3.0) + 10.0", 37.0f),
+      ("(5.0 + 10.0 * 2.0 + 15.0 / 3.0) * 2.0 + -10.0", 50.0f)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testFloatObject(evaluated, t._2, Some(s"Failed for ${t._1}"))
+    }
+  }
+
   "test if-else expression" should "pass the tests" in {
     List(
       ("if (true) { 10 }", 10),
@@ -138,6 +248,36 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test if-else expression with float" should "pass the tests" in {
+    List(
+      ("if (true) { 10.01 }", 10.01f),
+      ("if (false) { 10.01 }", NULL),
+      ("if (1.01) { 10.01 }", 10.01f),
+      ("if (-1.01) { -10.01 }", -10.01f),
+      ("if (1.01 < 2.01) { 10.01 }", 10.01f),
+      ("if (1 < 2.01) { 10.01 }", 10.01f),
+      ("if (1.01 < 2) { 10.01 }", 10.01f),
+      ("if (1.01 > 2.01) { 10.01 }", NULL),
+      ("if (1 > 2.01) { 10.01 }", NULL),
+      ("if (1.01 > 2) { 10.01 }", NULL),
+      ("if (1.01 > 2.01) { 10.01 } else { 20.01 }", 20.01f),
+      ("if (1 > 2.01) { 10.01 } else { 20.01 }", 20.01f),
+      ("if (1.01 > 2) { 10.01 } else { 20.01 }", 20.01f),
+      ("if (1.01 < 2.01) { 10.01 } else { 20.01 }", 10.01f),
+      ("if (1 < 2.01) { 10.01 } else { 20.01 }", 10.01f),
+      ("if (1.01 < 2) { 10.01 } else { 20.01 }", 10.01f),
+      ("if (5.01 * 5.01 + 10.01 > 34.01) { 99.01 } else { 100.01 }", 99.01f),
+      ("if ((1000.01 / 2.01) + 250.01 * 2.01 == 1000.0375) { 9999.01 }", 9999.01f) // TODO revisit me, for precision
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      if (t._2 == NULL) {
+        testNullObject(evaluated)
+      } else {
+        testFloatObject(evaluated, t._2.toString.toFloat, Some(s"Failed for '${t._1}'"))
+      }
+    }
+  }
+
   "test return statements" should "pass the tests" in {
     List(
       ("return 10;", 10),
@@ -151,14 +291,32 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test return statements with float" should "pass the tests" in {
+    List(
+      ("return 10.01;", 10.01f),
+      ("return -10.01;", -10.01f),
+      ("return 10.01; 9;", 10.01f),
+      ("return 2.0 * 5.0; 9;", 10.0f),
+      ("9; return 2.0 * 5.0; 9;", 10.0f),
+      ("if (10 > 1) {if (10 > 1) {return 10.01;}return 1;}", 10.01f)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testFloatObject(evaluated, t._2, Some(s"Failed for '${t._1}'"))
+    }
+  }
+
   "Error Handling test" should "pass the tests" in {
     List(
       ("5 + true;", "type mismatch: INTEGER + BOOLEAN"),
+      ("5.0 + true;", "type mismatch: FLOAT + BOOLEAN"),
       ("5 + true; 5;", "type mismatch: INTEGER + BOOLEAN"),
+      ("5.01 + true; 5.01;", "type mismatch: FLOAT + BOOLEAN"),
       ("-true", "unknown operator: -BOOLEAN"),
       ("true + false;", "unknown operator: BOOLEAN + BOOLEAN"),
       ("5; true + false; 5", "unknown operator: BOOLEAN + BOOLEAN"),
+      ("5.01; true + false; 5.01", "unknown operator: BOOLEAN + BOOLEAN"),
       ("if (10 > 1) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
+      ("if (10.0 > 1.01) { true + false; }", "unknown operator: BOOLEAN + BOOLEAN"),
       ("foobar", "identifier not found: foobar"),
       (
         """
@@ -192,16 +350,33 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "let statement with env and with float" should "pass the tests" in {
+    List(
+      ("let a = 5.01; a;", 5.01f),
+      ("let a = 5.01 * 5.01; a;", 25.100101f),
+      ("let a = 5.01; let b = a; b;", 5.01f),
+      ("let a = 5.01; let b = a; let c = a + b + 5.01; c;", 15.030001f)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testFloatObject(evaluated, expected = t._2)
+    }
+  }
+
   "test function param, body" should "pass the tests" in {
     List(
-      "fn(x) { x + 2; };"
+      "fn(x) { x + 2; };",
+      "fn(x) { x + 2.01; };"
     ) foreach { t =>
       val evaluated: obj.Object = prepareEval(t)
       assert(evaluated.isInstanceOf[obj.Function])
       val fn: obj.Function = evaluated.asInstanceOf[obj.Function]
       assert(fn.parameters.size == 1)
       assert(fn.parameters.head.toString == "x")
-      assert(fn.body.toString == "(x + 2)")
+      if (t.contains("2.01")) {
+        assert(fn.body.toString == "(x + 2.01)")
+      } else {
+        assert(fn.body.toString == "(x + 2)")
+      }
     }
   }
 
@@ -216,6 +391,20 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     ) foreach { t =>
       val evaluated: obj.Object = prepareEval(t._1)
       testIntegerObject(evaluated, t._2, Some(s"Failed for '${t._1}''"))
+    }
+  }
+
+  "test function calls with float" should "pass the tests" in {
+    List(
+      ("let identity = fn(x) { x; }; identity(5.01);", 5.01f),
+      ("let identity = fn(x) { return x; }; identity(5.01);", 5.01f),
+      ("let double = fn(x) { x * 2; }; double(5.01);", 10.02f),
+      ("let add = fn(x, y) { x + y; }; add(5.01, 5.01);", 10.02f),
+      ("let add = fn(x, y) { x + y; }; add(5.01 + 5.01, add(5.01, 5.01));", 20.04f),
+      ("fn(x) { x; }(5.01)", 5.01f)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testFloatObject(evaluated, t._2, Some(s"Failed for '${t._1}''"))
     }
   }
 

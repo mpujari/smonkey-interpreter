@@ -40,6 +40,7 @@ object Evaluator {
       case ife: IfExpression       => evalIfExpression(ife)
       case bs: BlockStatement      => evalBlockStatement(bs)
       case i: IntegerLiteral       => obj.Integer(i.value)
+      case f: FloatLiteral         => obj.Float(f.value)
       case b: BooleanLiteral       => nativeBoolToBooleanObj(b.value)
       case i: Identifier           => evalIdentifier(i)
       case ls: LetStatement =>
@@ -123,7 +124,20 @@ object Evaluator {
 
   private def evalInfixExpression(operator: String, left: obj.Object, right: obj.Object): obj.Object =
     (operator, left, right) match {
-      case (_, _: obj.Integer, _: obj.Integer)   => evalIntegerInfixExpression(operator, left, right)
+      case (_, _: obj.Integer, _: obj.Integer) => evalIntegerInfixExpression(operator, left, right)
+      case (_, _: obj.Float, _: obj.Float)     => evalFloatInfixExpression(operator, left, right)
+      case (_, _: obj.Integer, _: obj.Float) =>
+        evalFloatInfixExpression(operator, obj.Float(left.asInstanceOf[obj.Integer].value.toFloat), right)
+      case (_, _: obj.Float, _: obj.Integer) =>
+        evalFloatInfixExpression(operator, left, obj.Float(right.asInstanceOf[obj.Integer].value.toFloat))
+      //
+      case ("==", _: obj.Float, _: obj.Float) => evalFloatInfixExpression(operator, left, right)
+      //
+      case ("==", _: obj.Integer, _: obj.Float) =>
+        evalFloatInfixExpression(operator, obj.Float(left.asInstanceOf[obj.Integer].value.toFloat), right)
+      case ("==", _: obj.Float, _: obj.Integer) =>
+        evalFloatInfixExpression(operator, left, obj.Float(right.asInstanceOf[obj.Integer].value.toFloat))
+      //
       case ("==", _, _)                          => nativeBoolToBooleanObj(left == right)
       case ("!=", _, _)                          => nativeBoolToBooleanObj(left != right)
       case (o, l, r) if l.`type`() != r.`type`() => obj.Error(s"type mismatch: ${l.`type`()} $o ${r.`type`()}")
@@ -148,6 +162,24 @@ object Evaluator {
     }
   }
 
+  private def evalFloatInfixExpression(operator: String, left: obj.Object, right: obj.Object): obj.Object = {
+    val leftValue: scala.Float = left.asInstanceOf[obj.Float].value
+    val rightValue: scala.Float = right.asInstanceOf[obj.Float].value
+    operator match {
+      case "+"  => obj.Float(leftValue + rightValue)
+      case "-"  => obj.Float(leftValue - rightValue)
+      case "*"  => obj.Float(leftValue * rightValue)
+      case "/"  => obj.Float(leftValue / rightValue)
+      case ">"  => nativeBoolToBooleanObj(leftValue.compareTo(rightValue) > 0)
+      case "<"  => nativeBoolToBooleanObj(leftValue.compareTo(rightValue) < 0)
+      case "==" => nativeBoolToBooleanObj(leftValue.compareTo(rightValue) == 0)
+      case "!=" => nativeBoolToBooleanObj(leftValue.compareTo(rightValue) != 0)
+      case "<=" => nativeBoolToBooleanObj(leftValue.compareTo(rightValue) <= 0)
+      case ">=" => nativeBoolToBooleanObj(leftValue.compareTo(rightValue) >= 0)
+      case _    => NULL
+    }
+  }
+
   private def evalPrefixExpression(operator: String, right: obj.Object): obj.Object =
     operator match {
       case "!" => evalBangOperator(right)
@@ -156,6 +188,7 @@ object Evaluator {
     }
 
   private def evalMinusPrefixOperator(right: obj.Object): obj.Object = right match {
+    case obj.Float(f)                   => obj.Float(-1 * f)
     case obj.Integer(value)             => obj.Integer(-1 * value)
     case r if r.`type`() != INTEGER_OBJ => obj.Error(s"unknown operator: -${r.`type`()}")
     case _                              => NULL

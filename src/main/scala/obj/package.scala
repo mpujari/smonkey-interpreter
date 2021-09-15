@@ -7,6 +7,8 @@ package object obj {
 
   val INTEGER_OBJ: String = "INTEGER"
 
+  val FLOAT_OBJ: String = "FLOAT"
+
   val BOOLEAN_OBJ: String = "BOOLEAN"
 
   val RETURN_OBJ: String = "RETURN"
