@@ -36,6 +36,7 @@ trait Parser {
   )
   private val prefixParseFns: Map[TokenType, () => Option[Expression]] = Map(
     IDENT -> parseIdentifier,
+    FLOAT -> parseFloatLiteral,
     INT -> parseIntegerLiteral,
     BANG -> parsePrefixExpression,
     MINUS -> parsePrefixExpression,
@@ -173,6 +174,16 @@ trait Parser {
         errors += s"could not parse ${curToken.literal} as integer"
         Option.empty[Expression]
       case Success(i) => Some(IntegerLiteral(token = token, value = i))
+    }
+  }
+
+  private def parseFloatLiteral: () => Option[Expression] = { () =>
+    val token = curToken
+    Try(token.literal.toFloat) match {
+      case Failure(_) =>
+        errors += s"could not parse ${curToken.literal} as float"
+        Option.empty[Expression]
+      case Success(f) => Some(FloatLiteral(token = token, value = f))
     }
   }
 

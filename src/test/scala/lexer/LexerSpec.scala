@@ -17,7 +17,10 @@ class LexerSpec extends FlatSpec {
       "ab cd" -> List((IDENT, "ab"), (IDENT, "cd")),
       "ab; cd" -> List((IDENT, "ab"), (SEMICOLON, ";"), (IDENT, "cd")),
       "+" -> List((PLUS, "+")),
-      ";+" -> List((SEMICOLON, ";"), (PLUS, "+"))
+      ";+" -> List((SEMICOLON, ";"), (PLUS, "+")),
+      "5" -> List((INT, "5")),
+      "5.0" -> List((FLOAT, "5.0")),
+      ".01" -> List((FLOAT, ".01"))
     ) foreach { t =>
       val input = t._1
       val expectedTokens = t._2
@@ -37,6 +40,11 @@ class LexerSpec extends FlatSpec {
         (PLUS, "+"),
         (INT, "100")
       ),
+      "5.0 + 100" -> List(
+        (FLOAT, "5.0"),
+        (PLUS, "+"),
+        (INT, "100")
+      ),
       "1 + 1" -> List(
         (INT, "1"),
         (PLUS, "+"),
@@ -44,6 +52,10 @@ class LexerSpec extends FlatSpec {
       ),
       "1 + " -> List(
         (INT, "1"),
+        (PLUS, "+")
+      ),
+      "1.1 + " -> List(
+        (FLOAT, "1.1"),
         (PLUS, "+")
       )
     ) foreach { t =>
@@ -86,6 +98,7 @@ class LexerSpec extends FlatSpec {
       """
         |let five = 5;
         |let ten = 10;
+        |let f = 100.1;
         |
         |let add = fn(x, y) {
         |  x + y;
@@ -105,6 +118,11 @@ class LexerSpec extends FlatSpec {
       (IDENT, "ten"),
       (ASSIGN, "="),
       (INT, "10"),
+      (SEMICOLON, ";"),
+      (LET, "let"),
+      (IDENT, "f"),
+      (ASSIGN, "="),
+      (FLOAT, "100.1"),
       (SEMICOLON, ";"),
       (LET, "let"),
       (IDENT, "add"),
@@ -154,7 +172,7 @@ class LexerSpec extends FlatSpec {
   "test nextToken with keywords return, true, false if" should "return expected tokens" in {
     val input =
       """
-        |if (5 < 10) {
+        |if (5 < 10.0) {
         |   return true;
         |} else {
         |   return false;
@@ -165,7 +183,7 @@ class LexerSpec extends FlatSpec {
       (LPAREN, "("),
       (INT, "5"),
       (LT, "<"),
-      (INT, "10"),
+      (FLOAT, "10.0"),
       (RPAREN, ")"),
       (LBRACE, "{"),
       (RETURN, "return"),
@@ -192,6 +210,8 @@ class LexerSpec extends FlatSpec {
       """
         | 10 == 10
         | 10 != 9
+        | 1.1 == 1.1
+        | 1.0 != 2.0
         |""".stripMargin
     val expectedTokens = List(
       (INT, "10"),
@@ -199,7 +219,13 @@ class LexerSpec extends FlatSpec {
       (INT, "10"),
       (INT, "10"),
       (NOT_EQ, "!="),
-      (INT, "9")
+      (INT, "9"),
+      (FLOAT, "1.1"),
+      (EQ, "=="),
+      (FLOAT, "1.1"),
+      (FLOAT, "1.0"),
+      (NOT_EQ, "!="),
+      (FLOAT, "2.0"),
     )
     val lexer = Lexer(input)
     expectedTokens foreach { et =>

@@ -17,14 +17,15 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
         let x = 5;
         let y = 10;
         let foobar = 838383;
+        let a = 10.10;
         """.stripMargin
     val lexer: Lexer = Lexer(input)
     val parser: Parser = Parser(lexer)
 
     val program: Program = parser.parserProgram()
-    assert(program.statements.size == 3)
+    assert(program.statements.size == 4)
     assert(parser.getErrors.isEmpty)
-    val expectedIdentifiers: List[String] = List("x", "y", "foobar")
+    val expectedIdentifiers: List[String] = List("x", "y", "foobar", "a")
 
     expectedIdentifiers.zipWithIndex.foreach {
       case (ident, i) =>
@@ -39,6 +40,7 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
   "test Let statement some more" should "parse program" in {
     List(
       ("let x = 5;", "x", 5),
+      ("let x = 5.2566;", "x", 5.2566f),
       ("let y = true;", "y", true),
       ("let foobar = y;", "foobar", "y")
     ) foreach { t =>
@@ -85,6 +87,7 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
   "invalid input" should "have error message" in {
     List(
       "let x 5;" -> List("expected next token to be =, got INT instead"),
+      "let x 5.10;" -> List("expected next token to be =, got FLOAT instead"),
       "let = 10;" -> List("expected next token to be IDENT, got = instead", "no prefix parse function for = found"),
       "let 838383;" -> List("expected next token to be IDENT, got INT instead")
     ).foreach { t =>
@@ -114,12 +117,13 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
          return 5;
          return 10;
          return 993322;
+         return 25.01;
         """.stripMargin
     val lexer: Lexer = Lexer(input)
     val parser: Parser = Parser(lexer)
     val program: Program = parser.parserProgram()
     assert(parser.getErrors.isEmpty)
-    assert(program.statements.size == 3)
+    assert(program.statements.size == 4)
 
     program.statements.foreach { stmt =>
       assert(stmt.isInstanceOf[ReturnStatement])
@@ -161,6 +165,23 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     assert(integerLiteral.tokenLiteral() == "5")
   }
 
+  "simple float literals" should "pass the test" in {
+    val input: String = "5.01;"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(expressionStmt.expression.isInstanceOf[FloatLiteral])
+    val floatLiteral: FloatLiteral = expressionStmt.expression.asInstanceOf[FloatLiteral]
+    assert(floatLiteral.value.compareTo(5.01f) == 0)
+    assert(floatLiteral.tokenLiteral() == "5.01")
+  }
+
   "simple prefix expression" should "pass the test" in {
     List(("!5;", "!", 5), ("-15;", "-", 15)) foreach { t =>
       val input = t._1
@@ -180,7 +201,26 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
-  "simple infex expression" should "pass the test" in {
+  "simple prefix expression with Float" should "pass the test" in {
+    List(("-0.15;", "-", 0.15f)) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[PrefixExpression])
+      val prefixExpression: PrefixExpression = expressionStmt.expression.asInstanceOf[PrefixExpression]
+      assert(prefixExpression.operator == t._2)
+      testFloatLiteral(prefixExpression.right, t._3)
+    }
+  }
+
+  "simple infix expression" should "pass the test" in {
     List(
       ("5 + 5;", 5, "+", 5),
       ("5 - 5;", 5, "-", 5),
@@ -212,6 +252,38 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "simple infix expression with Float" should "pass the test" in {
+    List(
+      ("5.001 + 5.001;", 5.001f, "+", 5.001f),
+      ("5.001 - 5.001;", 5.001f, "-", 5.001f),
+      ("5.001 * 5.001;", 5.001f, "*", 5.001f),
+      ("5.001 / 5.001;", 5.001f, "/", 5.001f),
+      ("5.001 > 5.001;", 5.001f, ">", 5.001f),
+      ("5.001 < 5.001;", 5.001f, "<", 5.001f),
+      ("5.001 == 5.001;", 5.001f, "==", 5.001f),
+      ("5.001 != 5.001;", 5.001f, "!=", 5.001f),
+      ("5.001 <= 5.001;", 5.001f, "<=", 5.001f),
+      ("5.001 >= 5.001;", 5.001f, ">=", 5.001f)
+    ) foreach { t =>
+      val input = t._1
+      val lexer: Lexer = Lexer(input)
+      val parser: Parser = Parser(lexer)
+      val program: Program = parser.parserProgram()
+      assert(parser.getErrors.isEmpty)
+
+      assert(program.statements.size == 1)
+      val stmt: Statement = program.statements.head
+      assert(stmt.isInstanceOf[ExpressionStatement])
+      val expressionStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+      assert(expressionStmt.expression.isInstanceOf[InfixExpression])
+      val infixExpression: InfixExpression = expressionStmt.expression.asInstanceOf[InfixExpression]
+
+      assert(infixExpression.operator == t._3)
+      testFloatLiteral(infixExpression.left, t._2)
+      testFloatLiteral(infixExpression.right, t._4)
+    }
+  }
+
   "operator precedence" should "pass the test" in {
     List(
       ("-a * b", "((-a) * b)"),
@@ -223,14 +295,22 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       ("a + b / c", "(a + (b / c))"),
       ("a + b * c + d / e - f", "(((a + (b * c)) + (d / e)) - f)"),
       ("3 + 4; -5 * 5", "(3 + 4)((-5) * 5)"),
+      ("0.3 + 0.4; -0.5 * 0.5", "(0.3 + 0.4)((-0.5) * 0.5)"),
       ("5 > 4 == 3 < 4", "((5 > 4) == (3 < 4))"),
+      ("0.5 > 0.4 == 0.3 < 0.4", "((0.5 > 0.4) == (0.3 < 0.4))"),
       ("5 < 4 != 3 > 4", "((5 < 4) != (3 > 4))"),
-      ("3 + 4 * 5 == 3 * 1 + 4 * 5", "((3 + (4 * 5)) == ((3 * 1) + (4 * 5)))"),
+      ("5.01 < 4.01 != 3.01 > 4.05", "((5.01 < 4.01) != (3.01 > 4.05))"),
+      ("-0.3 + -.04 * 5 == 3 * 1 + 4 * 5", "(((-0.3) + ((-.04) * 5)) == ((3 * 1) + (4 * 5)))"),
       ("-1 + 2", "((-1) + 2)"),
+      ("-0.1 + 2", "((-0.1) + 2)"),
       ("true", "true"),
       ("false", "false"),
       ("3 > 5 == false", "((3 > 5) == false)"),
-      ("3 < 5 == true", "((3 < 5) == true)")
+      ("-0.3 > 5 == false", "(((-0.3) > 5) == false)"),
+      ("0.3 > 5 == false", "((0.3 > 5) == false)"),
+      ("3 < 5 == true", "((3 < 5) == true)"),
+      ("3 < 0.5 == true", "((3 < 0.5) == true)"),
+      ("3 < -0.5 == true", "((3 < (-0.5)) == true)")
     ) foreach { t =>
       val input = t._1
       val lexer: Lexer = Lexer(input)
@@ -314,12 +394,23 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
   "parsing operator precedence expression" should "pass test" in {
     List(
       ("1 + (2 + 3) + 4", "((1 + (2 + 3)) + 4)"),
+      ("0.1 + (0.2 + 3) + 4", "((0.1 + (0.2 + 3)) + 4)"),
       ("(5 + 5) * 2", "((5 + 5) * 2)"),
+      ("(-5 + 5) * 2", "(((-5) + 5) * 2)"),
+      ("(-0.5 + 5) * -0.2", "(((-0.5) + 5) * (-0.2))"),
       ("2 / (5 + 5)", "(2 / (5 + 5))"),
+      ("0.2 / (0.5 + 0.5)", "(0.2 / (0.5 + 0.5))"),
+      ("-0.2 / (-0.5 + -0.5)", "((-0.2) / ((-0.5) + (-0.5)))"),
       ("-(5 + 5)", "(-(5 + 5))"),
+      ("-(0.5 + 0.5)", "(-(0.5 + 0.5))"),
+      ("-(-0.5 + -0.5)", "(-((-0.5) + (-0.5)))"),
       ("!(true == true)", "(!(true == true))"),
       ("a + add(b * c) + d", "((a + add((b * c))) + d)"),
       ("add(a, b, 1, 2 * 3, 4 + 5, add(6, 7 * 8))", "add(a, b, 1, (2 * 3), (4 + 5), add(6, (7 * 8)))"),
+      ("add(a, b, 0.1, 0.2 * 0.3, 0.4 + 5, add(0.6, 7 * 0.8))",
+       "add(a, b, 0.1, (0.2 * 0.3), (0.4 + 5), add(0.6, (7 * 0.8)))"),
+      ("add(a, b, -0.1, 0.2 * -0.3, -0.4 + 5, add(0.6, 7 * -0.8))",
+       "add(a, b, (-0.1), (0.2 * (-0.3)), ((-0.4) + 5), add(0.6, (7 * (-0.8))))"),
       ("add(a + b + c * d / f + g)", "add((((a + b) + ((c * d) / f)) + g))")
     ) foreach { t =>
       val input = t._1
@@ -440,6 +531,25 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     testLiteralExpression(callExp.arguments.head, 1)
     testInfixExpression(callExp.arguments(1), 2, "*", 3)
     testInfixExpression(callExp.arguments(2), 4, "+", 5)
+  }
+
+  "parsing call expression with float args" should "pass test" in {
+    val input = "add(0.1, 0.2 * 0.3, 0.4 + 0.5);"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val expStmt: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(expStmt.expression.isInstanceOf[CallExpression])
+    val callExp = expStmt.expression.asInstanceOf[CallExpression]
+    testIdentifier(callExp.function, "add")
+    assert(callExp.arguments.size == 3)
+    testLiteralExpression(callExp.arguments.head, 0.1f)
+    testInfixExpression(callExp.arguments(1), 0.2f, "*", 0.3f)
+    testInfixExpression(callExp.arguments(2), 0.4f, "+", 0.5f)
   }
 
 }
