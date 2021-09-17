@@ -130,14 +130,6 @@ object Evaluator {
         evalFloatInfixExpression(operator, obj.Float(left.asInstanceOf[obj.Integer].value.toFloat), right)
       case (_, _: obj.Float, _: obj.Integer) =>
         evalFloatInfixExpression(operator, left, obj.Float(right.asInstanceOf[obj.Integer].value.toFloat))
-      //
-      case ("==", _: obj.Float, _: obj.Float) => evalFloatInfixExpression(operator, left, right)
-      //
-      case ("==", _: obj.Integer, _: obj.Float) =>
-        evalFloatInfixExpression(operator, obj.Float(left.asInstanceOf[obj.Integer].value.toFloat), right)
-      case ("==", _: obj.Float, _: obj.Integer) =>
-        evalFloatInfixExpression(operator, left, obj.Float(right.asInstanceOf[obj.Integer].value.toFloat))
-      //
       case ("==", _, _)                          => nativeBoolToBooleanObj(left == right)
       case ("!=", _, _)                          => nativeBoolToBooleanObj(left != right)
       case (o, l, r) if l.`type`() != r.`type`() => obj.Error(s"type mismatch: ${l.`type`()} $o ${r.`type`()}")
