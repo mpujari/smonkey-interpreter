@@ -105,6 +105,30 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test eval boolean for Strings" should "pass the tests" in {
+    List(
+      ("\"a\" < \"b\"", true),
+      ("\"b\" < \"a\"", false),
+      ("\"a\" > \"b\"", false),
+      ("\"b\" > \"a\"", true),
+      ("\"a\" == \"a\"", true),
+      ("\"a\" == \"b\"", false),
+      ("\"b\" == \"a\"", false),
+      ("\"a\" != \"a\"", false),
+      ("\"a\" != \"b\"", true),
+      ("\"b\" != \"a\"", true),
+      ("\"a\" <= \"a\"", true),
+      ("\"a\" <= \"b\"", true),
+      ("\"b\" <= \"a\"", false),
+      ("\"a\" >= \"a\"", true),
+      ("\"a\" >= \"b\"", false),
+      ("\"b\" >= \"a\"", true)
+    ) foreach { t =>
+      val evaluated: obj.Object = prepareEval(t._1)
+      testBooleanObject(evaluated, t._2, Some(s"Test failed for '${t._1}'"))
+    }
+  }
+
   "test eval bang prefix operator" should "pass the tests" in {
     List(
       ("!true", false),
@@ -425,7 +449,7 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
   "test String literals" should "pass the tests" in {
     List(
       ("\"hello, world!\"", "hello, world!"),
-      ("\"hello, world12222222222!\"", "hello, world12222222222!"),
+      ("\"hello, world12!\"", "hello, world12!"),
       ("\"hello, \tworld\"", "hello, \tworld"),
       ("\"hello, \nworld\"", "hello, \nworld"),
       ("\"hello, \t\t\tworld\n\n\"", "hello, \t\t\tworld\n\n")
@@ -433,6 +457,27 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       val eval = prepareEval(t._1)
       testStringObject(eval, t._2)
     }
+  }
+
+  "test string concatenation" should "pass the tests" in {
+    List(
+      ("\"hello\" + \", world\"", "hello, world"),
+      ("\"a\" + 1", "a1"),
+      ("\"a\" + 1.01", "a1.01"),
+      ("1 + \"a\"", "1a"),
+      ("1.01 + \"a\"", "1.01a")
+    ) foreach { t =>
+      val eval = prepareEval(t._1)
+      testStringObject(eval, t._2)
+    }
+  }
+
+  "test string with unsupported concatenation" should "pass the tests" in {
+    val input = "\"hello\" - \", world\""
+    val eval = prepareEval(input)
+    assert(eval.isInstanceOf[obj.Error])
+    val error = eval.asInstanceOf[obj.Error]
+    assert(error.errorMsg == "unknown operator: STRING - STRING")
   }
 
 }
