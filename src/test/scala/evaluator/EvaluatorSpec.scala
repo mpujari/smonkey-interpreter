@@ -422,4 +422,17 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     testIntegerObject(prepareEval(testData), 4)
   }
 
+  "test String literals" should "pass the tests" in {
+    List(
+      ("\"hello, world!\"", "hello, world!"),
+      ("\"hello, world12222222222!\"", "hello, world12222222222!"),
+      ("\"hello, \tworld\"", "hello, \tworld"),
+      ("\"hello, \nworld\"", "hello, \nworld"),
+      ("\"hello, \t\t\tworld\n\n\"", "hello, \t\t\tworld\n\n")
+    ) foreach { t =>
+      val eval = prepareEval(t._1)
+      testStringObject(eval, t._2)
+    }
+  }
+
 }

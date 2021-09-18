@@ -28,6 +28,12 @@ trait AbstractBaseSpec extends FlatSpec {
     errorMsg.fold(assert(integer.value == expected))(e => assert(integer.value == expected, e))
   }
 
+  def testStringObject(o: obj.Object, expected: String, errorMsg: Option[String] = None): Unit = {
+    errorMsg.fold(assert(o.isInstanceOf[obj.SString]))(e => assert(o.isInstanceOf[obj.SString], e))
+    val string = o.asInstanceOf[obj.SString]
+    errorMsg.fold(assert(string.value == expected))(e => assert(string.value == expected, e))
+  }
+
   def testFloatObject(o: obj.Object, expected: Float, errorMsg: Option[String] = None): Unit = {
     errorMsg.fold(assert(o.isInstanceOf[obj.Float]))(e => assert(o.isInstanceOf[obj.Float], e))
     val f = o.asInstanceOf[obj.Float]

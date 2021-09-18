@@ -44,7 +44,8 @@ trait Parser {
     FALSE -> parseBooleanLiteral,
     LPAREN -> parseGroupExpression,
     IF -> parseIfExpression,
-    FUNCTION -> parseFunctionLiteral
+    FUNCTION -> parseFunctionLiteral,
+    STRING -> parseStringLiteral
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -175,6 +176,11 @@ trait Parser {
         Option.empty[Expression]
       case Success(i) => Some(IntegerLiteral(token = token, value = i))
     }
+  }
+
+  private def parseStringLiteral: () => Option[Expression] = { () =>
+    val token = curToken
+    Some(StringLiteral(token = token, value = token.literal))
   }
 
   private def parseFloatLiteral: () => Option[Expression] = { () =>

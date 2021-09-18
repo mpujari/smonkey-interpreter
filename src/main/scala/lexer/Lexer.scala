@@ -36,6 +36,9 @@ trait Lexer {
         } else {
           Token(ASSIGN, chStr)
         }
+      case '"' =>
+        readChar()
+        Token(STRING, readString())
       case ';' => Token(SEMICOLON, chStr)
       case '(' => Token(LPAREN, chStr)
       case ')' => Token(RPAREN, chStr)
@@ -92,6 +95,33 @@ trait Lexer {
 
     readChar()
     tok
+  }
+
+  def readString(): String = {
+    var chStr = ""
+    while (ch != '"' && ch != NIL) {
+      if (ch == '\\') {
+        val pc = peekChar()
+        // see if its
+        val c = pc match {
+          case '"' =>
+            readChar()
+            "\""
+          case 't' =>
+            readChar()
+            "\t"
+          case 'n' =>
+            readChar()
+            "\n"
+          case _ => ch
+        }
+        chStr = chStr + c
+      } else {
+        chStr = chStr + ch
+      }
+      readChar()
+    }
+    chStr
   }
 
   def isLetter(ch: Char): Boolean = (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')

@@ -14,6 +14,7 @@ object Tokens {
   val IDENT = "IDENT"
   val INT = "INT"
   val FLOAT = "FLOAT"
+  val STRING = "STRING"
 
   // operators
   val ASSIGN = "="
