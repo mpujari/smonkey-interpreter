@@ -43,6 +43,7 @@ object Evaluator {
       case f: FloatLiteral         => obj.Float(f.value)
       case b: BooleanLiteral       => nativeBoolToBooleanObj(b.value)
       case i: Identifier           => evalIdentifier(i)
+      case str: StringLiteral      => obj.SString(str.value)
       case ls: LetStatement =>
         val v = eval(ls.value)
         if (isError(v)) {

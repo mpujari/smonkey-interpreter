@@ -20,7 +20,11 @@ class LexerSpec extends FlatSpec {
       ";+" -> List((SEMICOLON, ";"), (PLUS, "+")),
       "5" -> List((INT, "5")),
       "5.0" -> List((FLOAT, "5.0")),
-      ".01" -> List((FLOAT, ".01"))
+      ".01" -> List((FLOAT, ".01")),
+      "\"foo bar\"" -> List((STRING, "foo bar")),
+      "\"foo bar" -> List((STRING, "foo bar")),
+      """"foo\"bar"""" -> List((STRING, "foo\"bar")),
+      """"foo\"\t\n\ebar"""" -> List((STRING, "foo\"\t\n\\ebar"))
     ) foreach { t =>
       val input = t._1
       val expectedTokens = t._2
@@ -107,6 +111,8 @@ class LexerSpec extends FlatSpec {
         |let result = add(five, ten);
         |!-/*5%
         |5 < 10 > 5
+        |"foobar"
+        |"foo bar"
         |""".stripMargin
     val expectedTokens = List(
       (LET, "let"),
@@ -159,7 +165,9 @@ class LexerSpec extends FlatSpec {
       (LT, "<"),
       (INT, "10"),
       (GT, ">"),
-      (INT, "5")
+      (INT, "5"),
+      (STRING, "foobar"),
+      (STRING, "foo bar")
     )
     val lexer = Lexer(input)
     expectedTokens foreach { et =>

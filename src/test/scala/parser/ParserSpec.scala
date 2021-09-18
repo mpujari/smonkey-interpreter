@@ -37,6 +37,24 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test String Literal expression" should "parse program" in {
+    val input: String =
+      """ "hello, world" """.stripMargin
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+
+    val program: Program = parser.parserProgram()
+    assert(program.statements.size == 1)
+    assert(parser.getErrors.isEmpty)
+
+    val statement: Statement = program.statements.head
+    assert(statement.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = statement.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[StringLiteral])
+    val sl: StringLiteral = es.expression.asInstanceOf[StringLiteral]
+    assert(sl.value == "hello, world")
+  }
+
   "test Let statement some more" should "parse program" in {
     List(
       ("let x = 5;", "x", 5),
