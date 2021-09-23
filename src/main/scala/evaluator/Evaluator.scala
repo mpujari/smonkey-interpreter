@@ -79,15 +79,17 @@ object Evaluator {
     result.toList
   }
 
-  private def applyFunction(fn: obj.Object, args: List[obj.Object]): obj.Object = {
-    if (!fn.isInstanceOf[obj.Function]) {
-      return obj.Error(s"not a function: ${fn.`type`()}")
+  private def applyFunction(fn: obj.Object, args: List[obj.Object]): obj.Object =
+    fn match {
+      case f: obj.Function =>
+        val extendedEnv: Environment = extendFunctionEnv(f, args)
+        val evaluated = eval(f.body)(extendedEnv)
+        unwrapReturnValue(evaluated)
+      case b: obj.Builtin =>
+        b.fn(args)
+      case _ =>
+        obj.Error(s"not a function: ${fn.`type`()}")
     }
-    val function = fn.asInstanceOf[obj.Function]
-    val extendedEnv: Environment = extendFunctionEnv(function, args)
-    val evaluated = eval(function.body)(extendedEnv)
-    unwrapReturnValue(evaluated)
-  }
 
   private def extendFunctionEnv(function: obj.Function, args: List[obj.Object]): Environment = {
     val env = Environment(outerEnv = Some(function.env))
@@ -105,14 +107,16 @@ object Evaluator {
       case _         => value
     }
 
-  private def evalIdentifier(i: Identifier)(implicit environment: Environment): obj.Object =
-    environment
-      .get(i.value)
-      .fold {
-        obj.Error(s"identifier not found: ${i.value}").asInstanceOf[obj.Object]
-      } { v =>
-        v
-      }
+  private def evalIdentifier(i: Identifier)(implicit environment: Environment): obj.Object = {
+    val value: Option[Object] = environment.get(i.value)
+    if (value.nonEmpty) {
+      value.get
+    } else if (Builtins.builtins.contains(i.value)) {
+      Builtins.builtins(i.value)
+    } else {
+      obj.Error(s"identifier not found: ${i.value}").asInstanceOf[obj.Object]
+    }
+  }
 
   private def isError(o: obj.Object): scala.Boolean =
     if (o != null) {

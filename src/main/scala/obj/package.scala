@@ -19,6 +19,8 @@ package object obj {
 
   val FUNCTION_OBJ: String = "FUNCTION"
 
+  val BUILTIN_OBJ: String = "BUILTIN"
+
   val NULL: obj.Null = Null.NULL
 
   val TRUE: obj.Boolean = Boolean.TRUE
