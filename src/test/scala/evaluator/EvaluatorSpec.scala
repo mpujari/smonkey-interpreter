@@ -480,4 +480,28 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     assert(error.errorMsg == "unknown operator: STRING - STRING")
   }
 
+  "test built in function len" should "pass the tests" in {
+    List(
+      ("len(\"\")", 0),
+      ("len(\"four\")", 4),
+      ("len(\"hello, world\")", 12),
+      ("len(\"abc\" + 5)", 4),
+      ("len(\"ab\" + 15 + 6)", 5), // would be "ab156" -> 5 chars
+      ("len(15 + 6 + \"ab\")", 4), // would be "21ab" -> 4 chars
+      ("len(1)", "arguments to 'len' not supported, got INTEGER"),
+      ("len(1.01)", "arguments to 'len' not supported, got FLOAT"),
+      ("len(\"1\", \"2\")", "wrong number of arguments, got=2, want=1")
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case s: String =>
+          assert(evaluated.isInstanceOf[obj.Error])
+          val e = evaluated.asInstanceOf[obj.Error]
+          assert(e.errorMsg == s)
+        case i: Int =>
+          testIntegerObject(evaluated, i)
+      }
+    }
+  }
+
 }
