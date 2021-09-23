@@ -504,4 +504,29 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test built in function print" should "pass the tests" in {
+    List(
+      ("print(\"\")", "", true),
+      ("print(\"four\")", "four", true),
+      ("print(\"hello, world\")", "hello, world", true),
+      ("print(\"abc\" + 5)", "abc5", true),
+      ("print(\"ab\" + 15 + 6)", "ab156", true), // would be "ab156" -> 5 chars
+      ("print(15 + 6 + \"ab\")", "21ab", true), // would be "21ab" -> 4 chars
+      ("print(1)", "1", true),
+      ("print(1.01)", "1.01", true),
+      ("print(1.01 + \"a\")", "1.01a", true),
+      ("print(\"1\", \"2\")", "wrong number of arguments, got=2, want=1", false)
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      if (t._3) {
+        val ss = evaluated.asInstanceOf[obj.SString]
+        assert(ss.value == t._2)
+      } else {
+        assert(evaluated.isInstanceOf[obj.Error])
+        val e = evaluated.asInstanceOf[obj.Error]
+        assert(e.errorMsg == t._2)
+      }
+    }
+  }
+
 }
