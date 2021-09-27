@@ -64,6 +64,22 @@ object Evaluator {
           return args.head
         }
         applyFunction(e, args)
+      case a: ArrayLiteral =>
+        val elements = evalExpressions(a.elements)
+        if (elements.size == 1 && isError(elements.head)) {
+          return elements.head
+        }
+        obj.Array(elements = evalExpressions(a.elements))
+      case i: IndexExpression =>
+        val left = eval(i.left)
+        if (isError(left)) {
+          return left
+        }
+        val index = eval(i.index)
+        if (isError(index)) {
+          return index
+        }
+        evalIndexExpression(left, index)
       case _ => obj.Error(s"unknown node type '${node.tokenLiteral()}'")
     }
 
@@ -263,6 +279,23 @@ object Evaluator {
       }
     }
     result
+  }
+
+  private def evalIndexExpression(left: Object, index: Object): obj.Object =
+    (left.`type`(), index.`type`()) match {
+      case (ARRAY_OBJ, INTEGER_OBJ) => evalArrayIndexExpression(left, index)
+      case _                        => Error(s"index operator not supported: ${left.`type`()}")
+    }
+
+  private def evalArrayIndexExpression(array: Object, index: Object): obj.Object = {
+    val arrayObj = array.asInstanceOf[obj.Array]
+    val i = index.asInstanceOf[obj.Integer].value
+    val max = arrayObj.elements.size - 1
+    if (i < 0 || i > max) {
+      NULL
+    } else {
+      arrayObj.elements(i)
+    }
   }
 
 }

@@ -21,6 +21,8 @@ package object obj {
 
   val BUILTIN_OBJ: String = "BUILTIN"
 
+  val ARRAY_OBJ: String = "ARRAY"
+
   val NULL: obj.Null = Null.NULL
 
   val TRUE: obj.Boolean = Boolean.TRUE

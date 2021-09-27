@@ -529,4 +529,39 @@ class EvaluatorSpec extends AnyFlatSpec with AbstractBaseSpec {
     }
   }
 
+  "test array literals" should "pass the tests" in {
+    val input = "[1, 2 * 2, 3 + 3]"
+    val evaluated = prepareEval(input)
+    assert(evaluated.isInstanceOf[obj.Array])
+    val array = evaluated.asInstanceOf[obj.Array]
+    assert(array.elements.size == 3)
+    testIntegerObject(array.elements.head, 1)
+    testIntegerObject(array.elements(1), 4)
+    testIntegerObject(array.elements(2), 6)
+  }
+
+  "test array index expressions" should "pass the tests" in {
+    List(
+      ("[1, 2, 3][0]", 1),
+      ("[1, 2, 3][1]", 2),
+      ("[1, 2, 3][2]", 3),
+      ("let i = 0; [1][i]", 1),
+      ("[1, 2, 3][1 + 1]", 3),
+      ("let myArray=[1,2,3];myArray[2];", 3),
+      ("let myArray=[1,2,3];myArray[0]+myArray[1]+myArray[2]", 6),
+      ("let myArray=[1,2,3];let i = myArray[0]; myArray[i]", 2),
+      ("[1,2,3][3]", NULL),
+      ("[1,2,3][-1]", NULL)
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case v: Int =>
+          assert(evaluated.isInstanceOf[obj.Integer])
+          testIntegerObject(evaluated, v)
+        case _ =>
+          testNullObject(evaluated)
+      }
+    }
+  }
+
 }
