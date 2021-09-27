@@ -7,6 +7,6 @@ object Precedences extends Enumeration {
 
   type Precedences = Value
 
-  val _, LOWEST, EQUALS, LESS_EQ_GREATER, LESS_GREATER, SUM, PRODUCT, PREFIX, CALL = Value
+  val _, LOWEST, EQUALS, LESS_EQ_GREATER, LESS_GREATER, SUM, PRODUCT, PREFIX, CALL, INDEX = Value
 
 }

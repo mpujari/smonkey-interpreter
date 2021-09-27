@@ -5,9 +5,9 @@ package evaluator
 
 import aabstract.AbstractBaseSpec
 import obj.NULL
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
-class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
+class EvaluatorSpec extends AnyFlatSpec with AbstractBaseSpec {
 
   "test eval integer" should "pass the tests" in {
     List(("5", 5), ("10", 10), ("-5", -5), ("-10", -10)) foreach { t =>

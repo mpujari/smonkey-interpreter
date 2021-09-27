@@ -7,10 +7,10 @@ import ast._
 import evaluator.Evaluator
 import lexer.Lexer
 import obj.{Environment, NULL}
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 import parser.Parser
 
-trait AbstractBaseSpec extends FlatSpec {
+trait AbstractBaseSpec extends AnyFlatSpec {
 
   def prepareEval(input: String): obj.Object = {
     val evaluated = Lexer(input)

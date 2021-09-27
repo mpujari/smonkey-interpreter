@@ -3,10 +3,10 @@
 
 package lexer
 
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 import token.Tokens._
 
-class LexerSpec extends FlatSpec {
+class LexerSpec extends AnyFlatSpec {
 
   "simple test with just idents" should "return expected tokens" in {
     Map(
@@ -185,6 +185,8 @@ class LexerSpec extends FlatSpec {
         |} else {
         |   return false;
         |}
+        |
+        |[1, 2];
         |""".stripMargin
     val expectedTokens = List(
       (IF, "if"),
@@ -203,7 +205,12 @@ class LexerSpec extends FlatSpec {
       (RETURN, "return"),
       (FALSE, "false"),
       (SEMICOLON, ";"),
-      (RBRACE, "}")
+      (RBRACE, "}"),
+      (LBRACKET, "["),
+      (INT, "1"),
+      (COMMA, ","),
+      (INT, "2"),
+      (RBRACKET, "]")
     )
     val lexer = Lexer(input)
     expectedTokens foreach { et =>
