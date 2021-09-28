@@ -8,19 +8,18 @@ object Builtins {
   val builtins: Map[String, obj.Object] =
     Map[String, obj.Builtin](
       "len" -> obj.Builtin(lenBuiltin),
-      "print" -> obj.Builtin(printBuiltin),
+      "puts" -> obj.Builtin(putsBuiltin),
       "first" -> obj.Builtin(firstBuiltin),
       "last" -> obj.Builtin(lastBuiltin),
       "rest" -> obj.Builtin(restBuiltin),
       "push" -> obj.Builtin(pushBuiltin)
     )
 
-  private def printBuiltin: Seq[obj.Object] => obj.Object = (args: Seq[obj.Object]) => {
-    if (args.length != 1) {
-      obj.Error(s"wrong number of arguments to 'print', got=${args.length}, want=1")
-    } else {
-      obj.SString(value = args.head.inspect())
+  private def putsBuiltin: Seq[obj.Object] => obj.Object = (args: Seq[obj.Object]) => {
+    args foreach { a =>
+      println(a.inspect())
     }
+    obj.NULL
   }
 
   private def lenBuiltin: Seq[obj.Object] => obj.Object = (args: Seq[obj.Object]) => {
