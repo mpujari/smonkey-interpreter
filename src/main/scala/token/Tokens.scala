@@ -40,6 +40,8 @@ object Tokens {
   val RPAREN = ")"
   val LBRACE = "{"
   val RBRACE = "}"
+  val LBRACKET = "["
+  val RBRACKET = "]"
 
   // Keywords
   val FUNCTION = "FUNCTION"

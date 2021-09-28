@@ -3,7 +3,7 @@
 
 package parser
 
-import ast._
+import ast.{Expression, _}
 import lexer.Lexer
 import token.Precedences._
 import token.Token
@@ -32,7 +32,8 @@ trait Parser {
     MINUS -> SUM.id,
     SLASH -> PRODUCT.id,
     ASTERISK -> PRODUCT.id,
-    LPAREN -> CALL.id
+    LPAREN -> CALL.id,
+    LBRACKET -> INDEX.id
   )
   private val prefixParseFns: Map[TokenType, () => Option[Expression]] = Map(
     IDENT -> parseIdentifier,
@@ -45,7 +46,8 @@ trait Parser {
     LPAREN -> parseGroupExpression,
     IF -> parseIfExpression,
     FUNCTION -> parseFunctionLiteral,
-    STRING -> parseStringLiteral
+    STRING -> parseStringLiteral,
+    LBRACKET -> parseArrayLiteral
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -59,31 +61,13 @@ trait Parser {
     GT -> parseInfixExpression,
     LT_EQ -> parseInfixExpression,
     GT_EQ -> parseInfixExpression,
-    LPAREN -> parseCallExpression
+    LPAREN -> parseCallExpression,
+    LBRACKET -> parseIndexExpression
   )
 
   private def parseCallExpression: Expression => Option[Expression] = { (left: Expression) =>
     val token: Token = curToken
-    Some(CallExpression(token = token, function = left, arguments = parseCallArguments()))
-  }
-
-  private def parseCallArguments(): List[Expression] = {
-    val args = ListBuffer[Expression]()
-    if (peekTokenIs(RPAREN)) {
-      nextToken()
-    } else {
-      nextToken()
-      args += parseExpression(LOWEST.id).get
-      while (peekTokenIs(COMMA)) {
-        nextToken()
-        nextToken()
-        args += parseExpression(LOWEST.id).get
-      }
-      if (!expectPeek(RPAREN)) {
-        args.clear()
-      }
-    }
-    args.toList
+    parseExpressionList(RPAREN).map(l => CallExpression(token = token, function = left, arguments = l))
   }
 
   private def parseFunctionLiteral: () => Option[Expression] = { () =>
@@ -309,6 +293,44 @@ trait Parser {
         }
         Some(LetStatement(token = letStmtToken, name = ident, value = value.orNull))
       }
+    }
+  }
+
+  private def parseArrayLiteral: () => Option[ast.Expression] = { () =>
+    val token = curToken
+    val list: Option[List[Expression]] = parseExpressionList(RBRACKET)
+    list.map(l => ArrayLiteral(token = token, elements = l))
+  }
+
+  private def parseExpressionList(end: TokenType): Option[List[ast.Expression]] =
+    if (peekTokenIs(end)) {
+      nextToken()
+      Some(List[ast.Expression]())
+    } else {
+      val list = ListBuffer[ast.Expression]()
+      nextToken()
+      list += parseExpression(LOWEST.id).orNull
+
+      while (peekTokenIs(COMMA)) {
+        nextToken()
+        nextToken()
+        list += parseExpression(LOWEST.id).orNull
+      }
+
+      if (!expectPeek(end)) {
+        return None
+      }
+      Some(list.toList)
+    }
+
+  private def parseIndexExpression: Expression => Option[Expression] = { (left: Expression) =>
+    val token: Token = curToken
+    nextToken()
+    val index = parseExpression(LOWEST.id)
+    if (!expectPeek(RBRACKET)) {
+      Option.empty[Expression]
+    } else {
+      index.map(i => IndexExpression(token = token, left = left, index = i))
     }
   }
 

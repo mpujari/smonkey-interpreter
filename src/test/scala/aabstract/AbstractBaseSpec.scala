@@ -7,10 +7,10 @@ import ast._
 import evaluator.Evaluator
 import lexer.Lexer
 import obj.{Environment, NULL}
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 import parser.Parser
 
-trait AbstractBaseSpec extends FlatSpec {
+trait AbstractBaseSpec extends AnyFlatSpec {
 
   def prepareEval(input: String): obj.Object = {
     val evaluated = Lexer(input)
@@ -93,6 +93,18 @@ trait AbstractBaseSpec extends FlatSpec {
     val boolExp = expression.asInstanceOf[BooleanLiteral]
     assert(boolExp.value == value)
     assert(boolExp.tokenLiteral() == value.toString)
+  }
+
+  def testArrayObj(arrayObj: obj.Object, list: List[Any]): Unit = {
+    assert(arrayObj.isInstanceOf[obj.Array])
+    val a = arrayObj.asInstanceOf[obj.Array]
+    assert(a.elements.size == list.size)
+    a.elements.zipWithIndex foreach { o =>
+      o._1 match {
+        case i: obj.Integer => assert(i.value == list(o._2))
+        case f: obj.Float   => assert(f.value == list(o._2))
+      }
+    }
   }
 
 }

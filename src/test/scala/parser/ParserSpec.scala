@@ -6,10 +6,10 @@ package parser
 import aabstract.AbstractBaseSpec
 import ast._
 import lexer.Lexer
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 import token.Tokens
 
-class ParserSpec extends FlatSpec with AbstractBaseSpec {
+class ParserSpec extends AnyFlatSpec with AbstractBaseSpec {
 
   "test Let statement" should "parse program" in {
     val input: String =
@@ -328,7 +328,9 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
       ("0.3 > 5 == false", "((0.3 > 5) == false)"),
       ("3 < 5 == true", "((3 < 5) == true)"),
       ("3 < 0.5 == true", "((3 < 0.5) == true)"),
-      ("3 < -0.5 == true", "((3 < (-0.5)) == true)")
+      ("3 < -0.5 == true", "((3 < (-0.5)) == true)"),
+      ("a*[1,2,3,4][b*c]*d", "((a * ([1, 2, 3, 4][(b * c)])) * d)"),
+      ("add(a*b[2], b[1], 2 * [1,2][1])", "add((a * (b[2])), (b[1]), (2 * ([1, 2][1])))"),
     ) foreach { t =>
       val input = t._1
       val lexer: Lexer = Lexer(input)
@@ -568,6 +570,72 @@ class ParserSpec extends FlatSpec with AbstractBaseSpec {
     testLiteralExpression(callExp.arguments.head, 0.1f)
     testInfixExpression(callExp.arguments(1), 0.2f, "*", 0.3f)
     testInfixExpression(callExp.arguments(2), 0.4f, "+", 0.5f)
+  }
+
+  "parsing array literal" should "pass the test" in {
+    val input = "[1, 2 * 2, 3 + 3]"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[ArrayLiteral])
+    val al: ArrayLiteral = es.expression.asInstanceOf[ArrayLiteral]
+
+    assert(al.elements.size == 3)
+    testIntegerLiteral(al.elements.head, value = 1)
+    testInfixExpression(al.elements(1), 2, "*", 2)
+    testInfixExpression(al.elements(2), 3, "+", 3)
+  }
+
+  "parsing empty array literal" should "pass the test" in {
+    val input = "[]"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[ArrayLiteral])
+    val al: ArrayLiteral = es.expression.asInstanceOf[ArrayLiteral]
+    assert(al.elements.isEmpty)
+  }
+
+  "parsing 1 element array literal" should "pass the test" in {
+    val input = "[2 + 4]"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[ArrayLiteral])
+    val al: ArrayLiteral = es.expression.asInstanceOf[ArrayLiteral]
+    assert(al.elements.nonEmpty)
+    testInfixExpression(al.elements.head, 2, "+", 4)
+  }
+
+  "parsing index expressions" should "pass the test" in {
+    val input = "myArray[1 + 1]"
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[IndexExpression])
+    val ie: IndexExpression = es.expression.asInstanceOf[IndexExpression]
+    assert(ie.token.`type` == Tokens.LBRACKET)
+    testInfixExpression(ie.index, 1, "+", 1)
   }
 
 }

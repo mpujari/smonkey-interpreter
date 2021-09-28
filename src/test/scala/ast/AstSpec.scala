@@ -3,11 +3,11 @@
 
 package ast
 
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 import token.Token
 import token.Tokens._
 
-class AstSpec extends FlatSpec {
+class AstSpec extends AnyFlatSpec {
 
   "program with letStatement toString" should "return valid string" in {
     val program =

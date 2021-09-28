@@ -5,9 +5,9 @@ package evaluator
 
 import aabstract.AbstractBaseSpec
 import obj.NULL
-import org.scalatest.FlatSpec
+import org.scalatest.flatspec.AnyFlatSpec
 
-class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
+class EvaluatorSpec extends AnyFlatSpec with AbstractBaseSpec {
 
   "test eval integer" should "pass the tests" in {
     List(("5", 5), ("10", 10), ("-5", -5), ("-10", -10)) foreach { t =>
@@ -490,7 +490,7 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("len(15 + 6 + \"ab\")", 4), // would be "21ab" -> 4 chars
       ("len(1)", "arguments to 'len' not supported, got INTEGER"),
       ("len(1.01)", "arguments to 'len' not supported, got FLOAT"),
-      ("len(\"1\", \"2\")", "wrong number of arguments, got=2, want=1")
+      ("len(\"1\", \"2\")", "wrong number of arguments to 'len', got=2, want=1")
     ) foreach { t =>
       val evaluated = prepareEval(t._1)
       t._2 match {
@@ -515,7 +515,7 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
       ("print(1)", "1", true),
       ("print(1.01)", "1.01", true),
       ("print(1.01 + \"a\")", "1.01a", true),
-      ("print(\"1\", \"2\")", "wrong number of arguments, got=2, want=1", false)
+      ("print(\"1\", \"2\")", "wrong number of arguments to 'print', got=2, want=1", false)
     ) foreach { t =>
       val evaluated = prepareEval(t._1)
       if (t._3) {
@@ -525,6 +525,122 @@ class EvaluatorSpec extends FlatSpec with AbstractBaseSpec {
         assert(evaluated.isInstanceOf[obj.Error])
         val e = evaluated.asInstanceOf[obj.Error]
         assert(e.errorMsg == t._2)
+      }
+    }
+  }
+
+  "test array literals" should "pass the tests" in {
+    val input = "[1, 2 * 2, 3 + 3]"
+    val evaluated = prepareEval(input)
+    assert(evaluated.isInstanceOf[obj.Array])
+    val array = evaluated.asInstanceOf[obj.Array]
+    assert(array.elements.size == 3)
+    testIntegerObject(array.elements.head, 1)
+    testIntegerObject(array.elements(1), 4)
+    testIntegerObject(array.elements(2), 6)
+  }
+
+  "test array index expressions" should "pass the tests" in {
+    List(
+      ("[1, 2, 3][0]", 1),
+      ("[1, 2, 3][1]", 2),
+      ("[1, 2, 3][2]", 3),
+      ("let i = 0; [1][i]", 1),
+      ("[1, 2, 3][1 + 1]", 3),
+      ("let myArray=[1,2,3];myArray[2];", 3),
+      ("let myArray=[1,2,3];myArray[0]+myArray[1]+myArray[2]", 6),
+      ("let myArray=[1,2,3];let i = myArray[0]; myArray[i]", 2),
+      ("[1,2,3][3]", NULL),
+      ("[1,2,3][-1]", NULL)
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case v: Int =>
+          assert(evaluated.isInstanceOf[obj.Integer])
+          testIntegerObject(evaluated, v)
+        case _ =>
+          testNullObject(evaluated)
+      }
+    }
+  }
+
+  "test len array" should "pass the tests" in {
+    List(
+      ("len([1, 2, 3])", 3),
+      ("len([])", 0),
+      ("len([1])", 1)
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case v: Int =>
+          assert(evaluated.isInstanceOf[obj.Integer])
+          testIntegerObject(evaluated, v)
+      }
+    }
+  }
+
+  "test first array" should "pass the tests" in {
+    List(
+      ("first([1, 2, 3])", 1),
+      ("first([])", NULL),
+      ("first([1])", 1)
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case v: Int =>
+          assert(evaluated.isInstanceOf[obj.Integer])
+          testIntegerObject(evaluated, v)
+        case _ =>
+          testNullObject(evaluated)
+      }
+    }
+  }
+
+  "test last array" should "pass the tests" in {
+    List(
+      ("last([1, 2, 3])", 3),
+      ("last([])", NULL),
+      ("last([1])", 1)
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case v: Int =>
+          assert(evaluated.isInstanceOf[obj.Integer])
+          testIntegerObject(evaluated, v)
+        case _ =>
+          testNullObject(evaluated)
+      }
+    }
+  }
+
+  "test rest array" should "pass the tests" in {
+    List(
+      ("rest([11, 12, 13])", List(12, 13)),
+      ("rest([])", NULL),
+      ("rest([1])", List())
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case l: List[Any] => testArrayObj(evaluated, l)
+        case _            => testNullObject(evaluated)
+      }
+    }
+  }
+
+  "test push array" should "pass the tests" in {
+    List(
+      ("push([11, 12, 13], 14)", List(11, 12, 13, 14)),
+      ("push([1.1, 12, 13], 14)", List(1.1f, 12, 13, 14)),
+      ("push([1.1, 12, 13], 14.01)", List(1.1f, 12, 13, 14.01f)),
+      ("push([], 1)", List(1)),
+      ("push([1], 2)", List(1, 2)),
+      ("push([1])", "wrong number of arguments to 'push', got=1, want=2")
+    ) foreach { t =>
+      val evaluated = prepareEval(t._1)
+      t._2 match {
+        case l: List[Any] => testArrayObj(evaluated, l)
+        case e: String    => evaluated.asInstanceOf[obj.Error].errorMsg == e
+        case _            => fail("Shouldn't come here")
       }
     }
   }
