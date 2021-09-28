@@ -95,4 +95,16 @@ trait AbstractBaseSpec extends AnyFlatSpec {
     assert(boolExp.tokenLiteral() == value.toString)
   }
 
+  def testArrayObj(arrayObj: obj.Object, list: List[Any]): Unit = {
+    assert(arrayObj.isInstanceOf[obj.Array])
+    val a = arrayObj.asInstanceOf[obj.Array]
+    assert(a.elements.size == list.size)
+    a.elements.zipWithIndex foreach { o =>
+      o._1 match {
+        case i: obj.Integer => assert(i.value == list(o._2))
+        case f: obj.Float   => assert(f.value == list(o._2))
+      }
+    }
+  }
+
 }
