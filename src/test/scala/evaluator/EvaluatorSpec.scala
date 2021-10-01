@@ -355,7 +355,7 @@ class EvaluatorSpec extends AnyFlatSpec with AbstractBaseSpec {
         "unknown operator: BOOLEAN + BOOLEAN",
       )
     ) foreach { t =>
-      val evaluated: obj.Object = prepareEval(t._1)
+      val evaluated: obj.Object = prepareEval(t._1, assertParserError = false)
       assert(evaluated.isInstanceOf[obj.Error])
       val error = evaluated.asInstanceOf[obj.Error]
       assert(error.errorMsg == t._2, s"Failed for '${t._1}'")
@@ -641,6 +641,57 @@ class EvaluatorSpec extends AnyFlatSpec with AbstractBaseSpec {
         case l: List[Any] => testArrayObj(evaluated, l)
         case e: String    => evaluated.asInstanceOf[obj.Error].errorMsg == e
         case _            => fail("Shouldn't come here")
+      }
+    }
+  }
+
+  "test hash literals" should "test pass" in {
+    val input =
+      """
+        |let two = "two";
+        |{
+        |   "one": 10 - 9,
+        |   two: 1 + 1,
+        |   "thr" + "ee": 6 / 2,
+        |   4: 4,
+        |   true: 5,
+        |   false: 6
+        |}
+        |""".stripMargin
+    val evaluated = prepareEval(input = input)
+    assert(evaluated.isInstanceOf[obj.Hash])
+    val hashObj = evaluated.asInstanceOf[obj.Hash]
+    val expected: Map[obj.Object, Int] = Map(
+      obj.SString(value = "one") -> 1,
+      obj.SString(value = "two") -> 2,
+      obj.SString(value = "three") -> 3,
+      obj.Integer(value = 4) -> 4,
+      obj.Boolean(value = true) -> 5,
+      obj.Boolean(value = false) -> 6
+    )
+    assert(expected.size == hashObj.pairs.size)
+    expected foreach { e =>
+      val v = hashObj.pairs(e._1)
+      assert(v.isInstanceOf[obj.Integer])
+      val i = v.asInstanceOf[obj.Integer]
+      assert(i.value == e._2)
+    }
+  }
+
+  "test hash index expression" should "test pass" in {
+    List(
+      (("""{"foo": 5}["bar"]"""), NULL),
+      (("""{}["foo"]"""), NULL),
+      (("""{"foo": 5}["foo"]"""), 5),
+      (("""let key = "foo"; {"foo": 5}[key]"""), 5),
+      (("""{5: 5}[5]"""), 5),
+      (("""{true: 5}[true]"""), 5),
+      (("""{false: 5}[false]"""), 5),
+    ) foreach { t =>
+      val evaluated = prepareEval(input = t._1)
+      t._2 match {
+        case i: Int => testIntegerObject(evaluated, i)
+        case _      => testNullObject(evaluated)
       }
     }
   }

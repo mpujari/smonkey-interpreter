@@ -7,6 +7,7 @@ import ast._
 import obj.{ERROR_OBJ, FALSE, INTEGER_OBJ, NULL, Return, TRUE}
 import obj._
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 object Evaluator {
@@ -80,8 +81,25 @@ object Evaluator {
           return index
         }
         evalIndexExpression(left, index)
-      case _ => obj.Error(s"unknown node type '${node.tokenLiteral()}'")
+      case hashLiteral: HashLiteral => evalHashLiteral(hashLiteral)
+      case _                        => obj.Error(s"unknown node type '${node.tokenLiteral()}'")
     }
+
+  private def evalHashLiteral(hashLiteral: HashLiteral)(implicit environment: Environment): obj.Object = {
+    val pairMap = mutable.HashMap[obj.Object, obj.Object]()
+    hashLiteral.pair.map { hl =>
+      val key = eval(hl._1)
+      if (isError(key)) {
+        return key
+      }
+      val value = eval(hl._2)
+      if (isError(value)) {
+        return value
+      }
+      pairMap += key -> value
+    }
+    Hash(pairs = pairMap.toMap)
+  }
 
   private def evalExpressions(expressions: List[Expression])(implicit environment: Environment): List[obj.Object] = {
     val result: ListBuffer[obj.Object] = ListBuffer()
@@ -284,8 +302,14 @@ object Evaluator {
   private def evalIndexExpression(left: Object, index: Object): obj.Object =
     (left.`type`(), index.`type`()) match {
       case (ARRAY_OBJ, INTEGER_OBJ) => evalArrayIndexExpression(left, index)
+      case (HASH_OBJ, _)            => evalHashIndexExpression(left, index)
       case _                        => Error(s"index operator not supported: ${left.`type`()}")
     }
+
+  private def evalHashIndexExpression(hashObj: Object, index: Object): obj.Object = {
+    val hash = hashObj.asInstanceOf[obj.Hash]
+    hash.pairs.getOrElse(index, NULL)
+  }
 
   private def evalArrayIndexExpression(array: Object, index: Object): obj.Object = {
     val arrayObj = array.asInstanceOf[obj.Array]

@@ -35,6 +35,7 @@ object Tokens {
   // delimiters
   val COMMA = ","
   val SEMICOLON = ";"
+  val COLON = ":"
 
   val LPAREN = "("
   val RPAREN = ")"

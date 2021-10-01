@@ -638,4 +638,78 @@ class ParserSpec extends AnyFlatSpec with AbstractBaseSpec {
     testInfixExpression(ie.index, 1, "+", 1)
   }
 
+  "parsing HashLiteral StringKeys" should "pass the test" in {
+    val input = """{"one": 1, "two": 2, "three": 3}"""
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[HashLiteral])
+    val hl: HashLiteral = es.expression.asInstanceOf[HashLiteral]
+    assert(hl.token.`type` == Tokens.LBRACE)
+    assert(hl.pair.size == 3)
+    val expectedMap: Map[String, Int] = Map("one" -> 1, "two" -> 2, "three" -> 3)
+    hl.pair foreach { h =>
+      assert(h._1.isInstanceOf[StringLiteral])
+      val k = h._1.asInstanceOf[StringLiteral]
+      assert(expectedMap.contains(k.value))
+      assert(h._2.isInstanceOf[IntegerLiteral])
+      val v = h._2.asInstanceOf[IntegerLiteral]
+      assert(expectedMap(k.value) == v.value)
+    }
+  }
+
+  "parsing Empty HashLiteral" should "pass the test" in {
+    val input = """{}"""
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[HashLiteral])
+    val hl: HashLiteral = es.expression.asInstanceOf[HashLiteral]
+    assert(hl.token.`type` == Tokens.LBRACE)
+    assert(hl.pair.isEmpty)
+  }
+
+  "parsing HashLiteral with Expression" should "pass the test" in {
+    val input = """{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}"""
+    val lexer: Lexer = Lexer(input)
+    val parser: Parser = Parser(lexer)
+    val program: Program = parser.parserProgram()
+    assert(parser.getErrors.isEmpty)
+    assert(program.statements.size == 1)
+    val stmt: Statement = program.statements.head
+    assert(stmt.isInstanceOf[ExpressionStatement])
+    val es: ExpressionStatement = stmt.asInstanceOf[ExpressionStatement]
+    assert(es.expression.isInstanceOf[HashLiteral])
+    val hl: HashLiteral = es.expression.asInstanceOf[HashLiteral]
+    assert(hl.token.`type` == Tokens.LBRACE)
+    assert(hl.pair.size == 3)
+    val expectedMap: Map[String, Expression => Unit] = Map(
+      "one" -> { e: Expression =>
+        testInfixExpression(e, 0, "+", 1)
+      },
+      "two" -> { e: Expression =>
+        testInfixExpression(e, 10, "-", 8)
+      },
+      "three" -> { e: Expression =>
+        testInfixExpression(e, 15, "/", 5)
+      }
+    )
+    hl.pair foreach { h =>
+      assert(h._1.isInstanceOf[StringLiteral])
+      val k = h._1.asInstanceOf[StringLiteral]
+      assert(expectedMap.contains(k.value))
+      expectedMap(k.value)(h._2)
+    }
+  }
+
 }

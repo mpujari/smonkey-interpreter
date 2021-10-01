@@ -75,7 +75,7 @@ class LexerSpec extends AnyFlatSpec {
   }
 
   "test nextToken with simple input" should "return expected tokens" in {
-    val input = "=+(){},;+-%"
+    val input = "=+(){},;+-%:"
     val expectedTokens = List(
       (ASSIGN, "="),
       (PLUS, "+"),
@@ -87,7 +87,8 @@ class LexerSpec extends AnyFlatSpec {
       (SEMICOLON, ";"),
       (PLUS, "+"),
       (MINUS, "-"),
-      (MOD, "%")
+      (MOD, "%"),
+      (COLON, ":")
     )
     val lexer = Lexer(input)
     expectedTokens foreach { et =>
@@ -113,6 +114,8 @@ class LexerSpec extends AnyFlatSpec {
         |5 < 10 > 5
         |"foobar"
         |"foo bar"
+        |[1, 2];
+        |{"foo" : "bar"}
         |""".stripMargin
     val expectedTokens = List(
       (LET, "let"),
@@ -167,7 +170,18 @@ class LexerSpec extends AnyFlatSpec {
       (GT, ">"),
       (INT, "5"),
       (STRING, "foobar"),
-      (STRING, "foo bar")
+      (STRING, "foo bar"),
+      (LBRACKET, "["),
+      (INT, "1"),
+      (COMMA, ","),
+      (INT, "2"),
+      (RBRACKET, "]"),
+      (SEMICOLON, ";"),
+      (LBRACE, "{"),
+      (STRING, "foo"),
+      (COLON, ":"),
+      (STRING, "bar"),
+      (RBRACE, "}")
     )
     val lexer = Lexer(input)
     expectedTokens foreach { et =>

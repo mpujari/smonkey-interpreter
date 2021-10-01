@@ -12,10 +12,13 @@ import parser.Parser
 
 trait AbstractBaseSpec extends AnyFlatSpec {
 
-  def prepareEval(input: String): obj.Object = {
+  def prepareEval(input: String, assertParserError: Boolean = true): obj.Object = {
     val evaluated = Lexer(input)
     val parser = Parser(evaluated)
     val program: Program = parser.parserProgram()
+    if (assertParserError) {
+      assert(parser.getErrors.isEmpty)
+    }
     implicit val env: Environment = Environment()
     Evaluator.eval(program)
   }

@@ -4,8 +4,11 @@
 package obj
 
 trait Object {
+
   type ObjectType = String
 
   def `type`(): ObjectType
+
   def inspect(): String
+
 }

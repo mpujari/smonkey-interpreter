@@ -23,6 +23,8 @@ package object obj {
 
   val ARRAY_OBJ: String = "ARRAY"
 
+  val HASH_OBJ: String = "HASH"
+
   val NULL: obj.Null = Null.NULL
 
   val TRUE: obj.Boolean = Boolean.TRUE

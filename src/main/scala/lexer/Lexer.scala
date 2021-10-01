@@ -51,6 +51,7 @@ trait Lexer {
       case '%' => Token(MOD, chStr)
       case '[' => Token(LBRACKET, chStr)
       case ']' => Token(RBRACKET, chStr)
+      case ':' => Token(COLON, chStr)
       case '!' =>
         if (peekChar() == '=') {
           val c = ch
