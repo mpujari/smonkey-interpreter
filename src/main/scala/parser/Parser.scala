@@ -9,8 +9,10 @@ import token.Precedences._
 import token.Token
 import token.Tokens._
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.{Failure, Success, Try}
+import util.control.Breaks._
 
 trait Parser {
 
@@ -47,7 +49,8 @@ trait Parser {
     IF -> parseIfExpression,
     FUNCTION -> parseFunctionLiteral,
     STRING -> parseStringLiteral,
-    LBRACKET -> parseArrayLiteral
+    LBRACKET -> parseArrayLiteral,
+    LBRACE -> parseHashLiteral
   )
 
   private val infixParseFns: Map[TokenType, Expression => Option[Expression]] = Map(
@@ -227,7 +230,7 @@ trait Parser {
     if (peekTokenIs(SEMICOLON)) {
       nextToken()
     }
-    Some(ExpressionStatement(token = token, expression = expression.orNull)) // TODO revisit orNull
+    expression.map(e => ExpressionStatement(token = token, expression = e))
   }
 
   private def parseBlockStatement(): Option[BlockStatement] = {
@@ -247,7 +250,7 @@ trait Parser {
   private def parseExpression(precedence: Int): Option[Expression] =
     prefixParseFns.get(curToken.`type`) match {
       case Some(prefixFn) =>
-        var leftExp = prefixFn()
+        var leftExp: Option[Expression] = prefixFn()
         while (!peekTokenIs(SEMICOLON) && precedence < peekPrecedences()) {
           val infixOpt = infixParseFns.get(peekToken.`type`)
           if (infixOpt.isEmpty) {
@@ -332,6 +335,43 @@ trait Parser {
     } else {
       index.map(i => IndexExpression(token = token, left = left, index = i))
     }
+  }
+
+  private def parseHashLiteral: () => Option[Expression] = { () =>
+    val token = curToken
+    val map: mutable.Map[Expression, Expression] = mutable.Map[Expression, Expression]()
+    var returnValue = Option.empty[Expression]
+    breakable {
+      while (!peekTokenIs(RBRACE)) {
+        nextToken()
+        val key = parseExpression(LOWEST.id)
+        if (key.isEmpty) {
+          errors += s"could not parse hash, can't find key"
+          break
+        }
+        if (!expectPeek(COLON)) {
+          errors += s"could not parse hash, can't find ':'"
+          break
+        }
+        nextToken()
+        val value = parseExpression(LOWEST.id)
+        if (value.isEmpty) {
+          errors += s"could not parse hash, can't find value"
+          break
+        }
+        map += (key.get -> value.get)
+        if (!peekTokenIs(RBRACE) && !expectPeek(COMMA)) {
+          errors += s"could not parse hash, can't find value"
+          break
+        }
+      }
+      if (expectPeek(RBRACE)) {
+        returnValue = Some(HashLiteral(token = token, pair = map.toMap))
+      } else {
+        errors += s"could not parse hash, can't find $RBRACE"
+      }
+    }
+    returnValue
   }
 
   private def curTokenIs(tokenType: TokenType): Boolean =
