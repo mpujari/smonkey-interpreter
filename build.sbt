@@ -1,4 +1,4 @@
-ThisBuild / version := "0.0.2"
+ThisBuild / version := "1.0.0"
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.2.9" % "test"
 
